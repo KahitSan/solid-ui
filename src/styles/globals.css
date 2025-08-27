@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+@utility ks-btn-base {
+  @apply inline-flex items-center justify-center;
+  /* Your custom HUD styles */
+}
+
+/* KahitSan Global Styles */
+:root {
+  /* Design tokens will be imported via PostCSS */
+}
+
+/* Global HUD styling */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ks-font-family);
+  background: var(--ks-bg-main);
+  color: var(--ks-hud-text);
+  line-height: 1.5;
+}
+
+/* HUD-specific utilities */
+.ks-glass {
+  background: var(--ks-bg-glass);
+  backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in srgb, var(--ks-hud-primary) 30%, transparent);
+}
+
+.ks-clip-corner {
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+
+.ks-glow {
+  box-shadow: var(--ks-shadow-glow);
+}
+
+.ks-text-glow {
+  text-shadow: 0 0 10px currentColor;
+}

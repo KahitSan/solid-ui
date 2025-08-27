@@ -1,0 +1,36 @@
+@import "../../../styles/tokens.css";
+
+/* Button Component Styles */
+.ks-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--ks-radius-md);
+  transition: all var(--ks-duration-fast);
+  font-family: var(--ks-font-family);
+  color: var(--ks-hud-text);
+  background: var(--ks-bg-glass);
+  backdrop-filter: blur(6px);
+}
+
+.ks-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ks-btn:hover:not(:disabled) {
+  background: var(--ks-bg-glass-hover);
+  border-color: color-mix(in srgb, var(--ks-hud-primary) 60%, transparent);
+  transform: scale(1.02);
+}
+
+/* Variants */
+.ks-btn-primary {
+  background: linear-gradient(135deg, var(--ks-hud-primary), var(--ks-hud-primary-glow));
+  color: var(--ks-bg-main);
+  border-color: var(--ks-hud-primary);
+}
+
+.ks-btn-secondary {
+  background: color-mix(in srgb, var(--ks-hud-secondary) 20%, transparent);
+  border-color: color-mix(in srgb, var(--ks-hud-secondary) 30%, transparent);
+}
