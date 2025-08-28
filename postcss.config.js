@@ -4,7 +4,10 @@ import postcssCalc from 'postcss-calc';
 
 export default {
   plugins: [
-    postcssImport(),
+    postcssImport({
+      path: ['src/styles', 'src'],
+      skipDuplicates: true
+    }),
     postcssCustomProperties({ preserve: false }),
     postcssCalc()
   ]

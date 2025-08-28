@@ -1,0 +1,282 @@
+@import "../../../styles/tokens.css";
+
+/* Base Button Styles */
+.ks-btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--ks-radius-md);
+  font-weight: 500;
+  font-family: var(--ks-font-family);
+  transition: all 200ms ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.ks-btn-base:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+.ks-btn-base:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ks-btn-base:disabled:hover {
+  transform: none;
+}
+
+/* Size Variants */
+.ks-btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.ks-btn-md {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.ks-btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+/* Icon-only variants */
+.ks-btn-icon-only.ks-btn-sm {
+  padding: 0.375rem;
+  min-width: auto;
+  aspect-ratio: 1;
+}
+
+.ks-btn-icon-only.ks-btn-md {
+  padding: 0.5rem;
+  min-width: auto;
+  aspect-ratio: 1;
+}
+
+.ks-btn-icon-only.ks-btn-lg {
+  padding: 0.75rem;
+  min-width: auto;
+  aspect-ratio: 1;
+}
+
+/* Variant Styles */
+.ks-btn-default {
+  background-color: rgba(201, 169, 97, 0.1);
+  border-color: rgba(201, 169, 97, 0.4);
+  color: var(--ks-hud-primary);
+}
+
+.ks-btn-default:hover:not(:disabled) {
+  background-color: rgba(201, 169, 97, 0.2);
+  border-color: rgba(201, 169, 97, 0.6);
+}
+
+.ks-btn-primary {
+  background-color: rgba(201, 169, 97, 0.2);
+  border-color: rgba(201, 169, 97, 0.6);
+  color: var(--ks-hud-primary);
+}
+
+.ks-btn-primary:hover:not(:disabled) {
+  background-color: rgba(201, 169, 97, 0.3);
+  border-color: var(--ks-hud-primary);
+}
+
+.ks-btn-success {
+  background-color: rgba(0, 204, 136, 0.1);
+  border-color: rgba(0, 204, 136, 0.4);
+  color: var(--ks-hud-green);
+}
+
+.ks-btn-success:hover:not(:disabled) {
+  background-color: rgba(0, 204, 136, 0.2);
+  border-color: rgba(0, 204, 136, 0.6);
+}
+
+.ks-btn-danger {
+  background-color: rgba(255, 68, 68, 0.1);
+  border-color: rgba(255, 68, 68, 0.4);
+  color: var(--ks-hud-red);
+}
+
+.ks-btn-danger:hover:not(:disabled) {
+  background-color: rgba(255, 68, 68, 0.2);
+  border-color: rgba(255, 68, 68, 0.6);
+}
+
+.ks-btn-outline {
+  background-color: transparent;
+  border-color: rgba(201, 169, 97, 0.4);
+  color: var(--ks-hud-primary);
+  border-width: 2px;
+}
+
+.ks-btn-outline:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(201, 169, 97, 0.6);
+}
+
+.ks-btn-ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--ks-hud-primary);
+}
+
+.ks-btn-ghost:hover:not(:disabled) {
+  background-color: rgba(201, 169, 97, 0.1);
+}
+
+.ks-btn-link {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--ks-hud-blue);
+  text-decoration: none;
+}
+
+.ks-btn-link:hover:not(:disabled) {
+  text-decoration: underline;
+  background-color: rgba(74, 158, 255, 0.05);
+}
+
+.ks-btn-link:focus {
+  text-decoration: underline;
+}
+
+/* Ripple Effect */
+.ks-btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ks-btn-ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0.1);
+  opacity: 0.8;
+  animation: ksButtonRippleExpand 0.4s ease-out forwards;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ripple Colors by Variant */
+.ks-btn-ripple-default {
+  background-color: rgba(201, 169, 97, 0.4);
+}
+
+.ks-btn-ripple-primary {
+  background-color: rgba(201, 169, 97, 0.4);
+}
+
+.ks-btn-ripple-success {
+  background-color: rgba(0, 204, 136, 0.4);
+}
+
+.ks-btn-ripple-danger {
+  background-color: rgba(255, 68, 68, 0.4);
+}
+
+.ks-btn-ripple-outline {
+  background-color: rgba(201, 169, 97, 0.4);
+}
+
+.ks-btn-ripple-ghost {
+  background-color: rgba(201, 169, 97, 0.3);
+}
+
+.ks-btn-ripple-link {
+  background-color: rgba(74, 158, 255, 0.4);
+}
+
+.ks-btn-ripple-fade {
+  animation: ksButtonRippleFadeOnly 0.3s ease-out forwards;
+}
+
+@keyframes ksButtonRippleExpand {
+  0% {
+    transform: scale(0.1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.25;
+  }
+}
+
+
+
+@keyframes ksButtonRippleFadeOnly {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+/* HUD Special Effects */
+.hud-scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.hud-scan-line::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(201, 169, 97, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+  z-index: 1;
+}
+
+.hud-scan-line:hover::before {
+  left: 100%;
+}
+
+.hud-clip-button {
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+}
+
+.hud-glow {
+  box-shadow: 0 0 10px rgba(201, 169, 97, 0.3);
+}
+
+.hud-glow:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(201, 169, 97, 0.5);
+}
+
+.hud-pulse {
+  animation: ksButtonHudPulse 2s infinite ease-in-out;
+}
+
+@keyframes ksButtonHudPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Ensure content stays above effects */
+.ks-btn-base > *:not(.ks-btn-ripple-effect) {
+  position: relative;
+  z-index: 2;
+}
