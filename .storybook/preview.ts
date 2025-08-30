@@ -1,4 +1,5 @@
 import type { Preview } from 'storybook-solidjs-vite';
+import { themes } from 'storybook/theming';
 import "../src/styles/globals.css";
 
 const preview: Preview = {
@@ -14,6 +15,7 @@ const preview: Preview = {
         },
         docs: {
             codePanel: true,
+            theme: themes.dark,
         },
     },
 };
