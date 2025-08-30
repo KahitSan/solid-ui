@@ -190,7 +190,7 @@ const Button: Component<ButtonProps> = (props) => {
       {/* Ripple effects */}
       {hasRipple() && ripples().map(ripple => (
         <span
-          key={ripple.id}
+          // key={ripple.id}
           class={cn(
             styles['ks-btn-ripple-effect'],
             getRippleClass(),

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
+import dts from 'vite-plugin-dts';
 import { resolve } from 'node:path';
 
 import type { Plugin } from "rollup";
@@ -99,7 +100,15 @@ export function injectIntoCssHelperAndRename(): Plugin {
 
 export default defineConfig({
   plugins: [
-    solid(), injectIntoCssHelperAndRename()
+    solid(),
+    dts({
+      insertTypesEntry: true,
+      copyDtsFiles: true,
+      outDir: 'dist',
+      include: ['src/**/*'],
+      exclude: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*']
+    }),
+    injectIntoCssHelperAndRename()
   ],
   css: {
     modules: {
