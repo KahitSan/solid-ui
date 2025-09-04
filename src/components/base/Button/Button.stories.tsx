@@ -86,7 +86,7 @@ const meta: Meta<typeof Button> = {
     },
     effect: {
       control: { type: 'text' },
-      description: 'HUD effects as array, single value, or space-delimited string: ["scanline", "glow"] or "scanline glow"',
+      description: 'HUD effects as array, single value, or space-delimited string: ["scanline", "glow"] or "scanline glow". Options: scanline, clip-top-left-bottom-right, clip-top-right-bottom-left, clip-minimal-top-left-bottom-right, clip-minimal-top-right-bottom-left, clip-inset-top-left-bottom-right, glow, pulse',
     },
     icon: {
       control: { type: 'select' },
@@ -323,17 +323,65 @@ export const WithScanLine: Story = {
   },
 };
 
-export const WithClipPath: Story = {
+export const WithClipTopLeftBottomRight: Story = {
   args: {
     variant: 'primary',
-    children: 'ANGULAR DESIGN',
-    effect: 'clip-path',
+    children: 'CLIP TL/BR',
+    effect: 'clip-top-left-bottom-right',
     icon: Zap,
   },
   parameters: {
     docs: {
       description: {
-        story: 'Button with angular clip-path corners. Use effect="clip-path" for HUD-style geometry.',
+        story: 'Button with top-left and bottom-right corners clipped. Use effect="clip-top-left-bottom-right".',
+      },
+    },
+  },
+};
+
+export const WithClipTopRightBottomLeft: Story = {
+  args: {
+    variant: 'primary',
+    children: 'CLIP TR/BL',
+    effect: 'clip-top-right-bottom-left',
+    icon: Zap,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Button with top-right and bottom-left corners clipped. Use effect="clip-top-right-bottom-left".',
+      },
+    },
+  },
+};
+
+export const WithClipMinimalTopLeftBottomRight: Story = {
+  args: {
+    variant: 'primary',
+    children: 'CLIP MINIMAL',
+    effect: 'clip-minimal-top-left-bottom-right',
+    icon: Zap,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Button with minimal top-left and bottom-right corners clipped. Use effect="clip-minimal-top-left-bottom-right".',
+      },
+    },
+  },
+};
+
+export const WithClipInsetTopLeftBottomRight: Story = {
+  args: {
+    variant: 'primary',
+    children: 'CLIP INSET',
+    effect: 'clip-inset-top-left-bottom-right',
+    icon: Zap,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Button with inset border effect and top-left/bottom-right corners clipped. Use effect="clip-inset-top-left-bottom-right".',
       },
     },
   },
@@ -366,6 +414,22 @@ export const WithPulse: Story = {
     docs: {
       description: {
         story: 'Button with pulsing animation for attention-grabbing elements. Use effect="pulse".',
+      },
+    },
+  },
+};
+
+export const CombinedEffects: Story = {
+  args: {
+    variant: 'primary',
+    children: 'COMBINED EFFECTS',
+    effect: 'clip-top-left-bottom-right glow scanline',
+    icon: Shield,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Button with multiple combined effects. Use space-delimited effects like "clip-top-left-bottom-right glow scanline".',
       },
     },
   },

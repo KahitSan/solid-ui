@@ -1,7 +1,9 @@
+/* Button.module.css */
 @import "../../../styles/tokens.css";
+@import "./effects.module.css";
 
 /* Base Button Styles */
-.ks-btn-base {
+.ks-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -16,16 +18,16 @@
   overflow: hidden;
 }
 
-.ks-btn-base:hover:not(:disabled) {
+.ks-btn:hover:not(:disabled) {
   transform: scale(1.02);
 }
 
-.ks-btn-base:disabled {
+.ks-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.ks-btn-base:disabled:hover {
+.ks-btn:disabled:hover {
   transform: none;
 }
 
@@ -67,86 +69,86 @@
   aspect-ratio: 1;
 }
 
-/* Variant Styles */
-.ks-btn-default {
+/* Button-specific variant styles (overrides generic ones) */
+.ks-btn.ks-variant-default {
   background-color: rgba(201, 169, 97, 0.1);
   border-color: rgba(201, 169, 97, 0.4);
   color: var(--ks-hud-primary);
 }
 
-.ks-btn-default:hover:not(:disabled) {
+.ks-btn.ks-variant-default:hover:not(:disabled) {
   background-color: rgba(201, 169, 97, 0.2);
   border-color: rgba(201, 169, 97, 0.6);
 }
 
-.ks-btn-primary {
+.ks-btn.ks-variant-primary {
   background-color: rgba(201, 169, 97, 0.2);
   border-color: rgba(201, 169, 97, 0.6);
   color: var(--ks-hud-primary);
 }
 
-.ks-btn-primary:hover:not(:disabled) {
+.ks-btn.ks-variant-primary:hover:not(:disabled) {
   background-color: rgba(201, 169, 97, 0.3);
   border-color: var(--ks-hud-primary);
 }
 
-.ks-btn-success {
+.ks-btn.ks-variant-success {
   background-color: rgba(0, 204, 136, 0.1);
   border-color: rgba(0, 204, 136, 0.4);
   color: var(--ks-hud-green);
 }
 
-.ks-btn-success:hover:not(:disabled) {
+.ks-btn.ks-variant-success:hover:not(:disabled) {
   background-color: rgba(0, 204, 136, 0.2);
   border-color: rgba(0, 204, 136, 0.6);
 }
 
-.ks-btn-danger {
+.ks-btn.ks-variant-danger {
   background-color: rgba(255, 68, 68, 0.1);
   border-color: rgba(255, 68, 68, 0.4);
   color: var(--ks-hud-red);
 }
 
-.ks-btn-danger:hover:not(:disabled) {
+.ks-btn.ks-variant-danger:hover:not(:disabled) {
   background-color: rgba(255, 68, 68, 0.2);
   border-color: rgba(255, 68, 68, 0.6);
 }
 
-.ks-btn-outline {
+.ks-btn.ks-variant-outline {
   background-color: transparent;
   border-color: rgba(201, 169, 97, 0.4);
   color: var(--ks-hud-primary);
   border-width: 2px;
 }
 
-.ks-btn-outline:hover:not(:disabled) {
+.ks-btn.ks-variant-outline:hover:not(:disabled) {
   background-color: rgba(255, 255, 255, 0.05);
   border-color: rgba(201, 169, 97, 0.6);
 }
 
-.ks-btn-ghost {
+.ks-btn.ks-variant-ghost {
   background-color: transparent;
   border-color: transparent;
   color: var(--ks-hud-primary);
 }
 
-.ks-btn-ghost:hover:not(:disabled) {
+.ks-btn.ks-variant-ghost:hover:not(:disabled) {
   background-color: rgba(201, 169, 97, 0.1);
 }
 
-.ks-btn-link {
+.ks-btn.ks-variant-link {
   background-color: transparent;
   border-color: transparent;
   color: var(--ks-hud-blue);
   text-decoration: none;
 }
 
-.ks-btn-link:hover:not(:disabled) {
+.ks-btn.ks-variant-link:hover:not(:disabled) {
   text-decoration: underline;
   background-color: rgba(74, 158, 255, 0.05);
 }
 
-.ks-btn-link:focus {
+.ks-btn.ks-variant-link:focus {
   text-decoration: underline;
 }
 
@@ -167,32 +169,36 @@
 }
 
 /* Ripple Colors by Variant */
-.ks-btn-ripple-default {
+.ks-btn-ripple-effect.ks-variant-default {
   background-color: rgba(201, 169, 97, 0.4);
 }
 
-.ks-btn-ripple-primary {
+.ks-btn-ripple-effect.ks-variant-primary {
   background-color: rgba(201, 169, 97, 0.4);
 }
 
-.ks-btn-ripple-success {
+.ks-btn-ripple-effect.ks-variant-success {
   background-color: rgba(0, 204, 136, 0.4);
 }
 
-.ks-btn-ripple-danger {
+.ks-btn-ripple-effect.ks-variant-danger {
   background-color: rgba(255, 68, 68, 0.4);
 }
 
-.ks-btn-ripple-outline {
-  background-color: rgba(201, 169, 97, 0.4);
+.ks-btn-ripple-effect.ks-variant-outline {
+  background-color: rgba(201, 169, 97, 0.4); /* Use primary color instead */
 }
 
-.ks-btn-ripple-ghost {
-  background-color: rgba(201, 169, 97, 0.3);
+/* Replace existing ripple color classes with this logic */
+
+/* Use primary-like ripple for ghost */
+.ks-btn-ripple-effect.ks-variant-ghost {
+  background-color: rgba(201, 169, 97, 0.3); /* consistent with primary */
 }
 
-.ks-btn-ripple-link {
-  background-color: rgba(74, 158, 255, 0.4);
+/* Remove ripple entirely for link — we'll handle with blink */
+.ks-btn-ripple-effect.ks-variant-link {
+  display: none;
 }
 
 .ks-btn-ripple-fade {
@@ -210,8 +216,6 @@
   }
 }
 
-
-
 @keyframes ksButtonRippleFadeOnly {
   0% {
     opacity: 0.3;
@@ -223,60 +227,9 @@
   }
 }
 
-/* HUD Special Effects */
-.hud-scan-line {
-  position: relative;
-  overflow: hidden;
-}
-
-.hud-scan-line::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(201, 169, 97, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
-  z-index: 1;
-}
-
-.hud-scan-line:hover::before {
-  left: 100%;
-}
-
-.hud-clip-button {
-  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
-}
-
-.hud-glow {
-  box-shadow: 0 0 10px rgba(201, 169, 97, 0.3);
-}
-
-.hud-glow:hover:not(:disabled) {
-  box-shadow: 0 0 20px rgba(201, 169, 97, 0.5);
-}
-
-.hud-pulse {
-  animation: ksButtonHudPulse 2s infinite ease-in-out;
-}
-
-@keyframes ksButtonHudPulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
 /* Ensure content stays above effects */
-.ks-btn-base > *:not(.ks-btn-ripple-effect) {
+.ks-btn > *:not(.ks-btn-ripple-effect) {
   position: relative;
   z-index: 2;
 }
+

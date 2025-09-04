@@ -1,8 +1,17 @@
-import { Component, JSX, splitProps, createSignal, onCleanup } from 'solid-js';
+import { Component, JSX, splitProps, createSignal, onCleanup, createMemo } from 'solid-js';
 import styles from './Button.module.css';
+import effects from './effects.module.css';
 
 // Define possible effects as a type
-type HUDEffect = 'scanline' | 'clip-path' | 'glow' | 'pulse';
+type HUDEffect =
+  | 'scanline'
+  | 'clip-top-left-bottom-right'
+  | 'clip-top-right-bottom-left'
+  | 'clip-minimal-top-left-bottom-right'
+  | 'clip-minimal-top-right-bottom-left'
+  | 'clip-inset-top-left-bottom-right'
+  | 'glow'
+  | 'pulse';
 
 export interface ButtonProps {
   variant?: 'default' | 'primary' | 'success' | 'danger' | 'outline' | 'ghost' | 'link';
@@ -24,112 +33,152 @@ function cn(...classes: (string | undefined | null | false)[]): string {
 
 const Button: Component<ButtonProps> = (props) => {
   const [local, others] = splitProps(props, [
-    'variant', 'size', 'effect', 'children', 'icon', 'iconPosition', 
-    'class', 'style', 'disabled', 'ripple', 'onClick'
+    'variant',
+    'size',
+    'effect',
+    'children',
+    'icon',
+    'iconPosition',
+    'class',
+    'style',
+    'disabled',
+    'ripple',
+    'onClick',
   ]);
 
-  const [ripples, setRipples] = createSignal<Array<{ 
-    id: number; 
-    x: number; 
-    y: number; 
-    size: number;
-    isFading: boolean;
-  }>>([]);
-  
+  const [ripples, setRipples] = createSignal<
+    Array<{
+      id: number;
+      x: number;
+      y: number;
+      size: number;
+      isFading: boolean;
+    }>
+  >([]);
+
+  const [blink, setBlink] = createSignal(false);
+
   let buttonRef: HTMLButtonElement | undefined;
   let mouseDownTime = 0;
 
   // Auto-detect icon-only mode when no children provided
-  const isIconOnly = () => !local.children && local.icon;
+  const isIconOnly = createMemo(() => !local.children && local.icon);
 
-  // Default ripple to true
-  const hasRipple = () => local.ripple !== false;
+  // Default ripple to true, but disable for clip-inset effects
+  const hasRipple = createMemo(() => {
+    if (local.ripple === false) return false;
+    
+    // Disable ripple for clip-inset effects as they interfere with the layout
+    const effects = Array.isArray(local.effect) 
+      ? local.effect 
+      : (local.effect || '').split(' ').map(e => e.trim()).filter(Boolean);
+    
+    if (effects.includes('clip-inset-top-left-bottom-right')) return false;
+    
+    return true;
+  });
 
-  const classes = () => {
-    const variant = local.variant || 'default';
+  // Get current variant
+  const currentVariant = createMemo(() => local.variant || 'default');
+
+  // Parse effects once - handle array, single effect, or space-delimited string
+  const parsedEffects = createMemo(() => {
+    if (!local.effect) return [];
+
+    const effectsArray = Array.isArray(local.effect)
+      ? local.effect
+      : local.effect.split(' ').map((e) => e.trim()).filter(Boolean);
+
+    return effectsArray.map((effect) => {
+      const effectMap: Record<string, string> = {
+        'scanline': effects['ks-hud-scan-line'],
+        'clip-top-left-bottom-right': effects['ks-hud-clip-top-left-bottom-right'],
+        'clip-top-right-bottom-left': effects['ks-hud-clip-top-right-bottom-left'],
+        'clip-minimal-top-left-bottom-right': effects['ks-hud-clip-minimal-top-left-bottom-right'],
+        'clip-minimal-top-right-bottom-left': effects['ks-hud-clip-minimal-top-right-bottom-left'],
+        'clip-inset-top-left-bottom-right': effects['ks-hud-clip-inset-top-left-bottom-right'],
+        'glow': effects['ks-hud-glow'],
+        'pulse': effects['ks-hud-pulse'],
+      };
+      return effectMap[effect];
+    }).filter(Boolean) as string[];
+  });
+
+  const classes = createMemo(() => {
+    const variant = currentVariant();
     const size = local.size || 'md';
 
-    // Parse effects - handle array, single effect, or space-delimited string
-    const effectClasses = local.effect 
-      ? (Array.isArray(local.effect) 
-          ? local.effect 
-          : local.effect.split(' ').map(e => e.trim()).filter(Boolean)
-        ).map(effect => {
-          const effectMap: Record<HUDEffect, string> = {
-            'scanline': styles['hud-scan-line'],
-            'clip-path': styles['hud-clip-button'], 
-            'glow': styles['hud-glow'],
-            'pulse': styles['hud-pulse']
-          };
-          return effectMap[effect as HUDEffect];
-        }).filter(Boolean)
-      : [];
-
     return cn(
-      styles['ks-btn-base'],
-      styles[`ks-btn-${variant}`],
+      styles['ks-btn'],
+      effects[`ks-variant-${variant}`],
       styles[`ks-btn-${size}`],
       isIconOnly() && styles['ks-btn-icon-only'],
-      hasRipple() && styles['ks-btn-ripple'],
-      ...effectClasses,
+      hasRipple() && currentVariant() !== 'link' && styles['ks-btn-ripple'],
+      !hasRipple() && effects['ks-interactive'],
+      ...parsedEffects(),
+      blink() && currentVariant() === 'link' ? styles['ks-btn-link-blink'] : '',
       local.class
     );
-  };
+  });
 
-  const getIconSize = () => {
+  const getIconSize = createMemo(() => {
     const sizeMap = {
       sm: 14,
       md: 16,
-      lg: 18
+      lg: 18,
     };
     return sizeMap[local.size || 'md'];
-  };
+  });
 
-  const getRippleClass = () => {
-    const variant = local.variant || 'default';
-    return styles[`ks-btn-ripple-${variant}`];
-  };
+  // Fix ripple colors: use primary for ghost and outline variants, current variant for others
+  const getRippleClass = createMemo(() => {
+    const variant = currentVariant();
+    const rippleVariant = (variant === 'ghost' || variant === 'outline') ? 'primary' : variant;
+    return `${styles['ks-btn-ripple-effect']} ${effects[`ks-variant-${rippleVariant}`]}`;
+  });
 
   const handleMouseDown = (event: MouseEvent) => {
-    // Create ripple effect if enabled
-    if (hasRipple() && !local.disabled && buttonRef) {
+    if (local.disabled) return;
+
+    const variant = currentVariant();
+
+    // Link variant: just blink, no ripple
+    if (variant === 'link') {
+      setBlink(true);
+      setTimeout(() => setBlink(false), 300);
+      return;
+    }
+
+    // All other variants: ripple effect
+    if (hasRipple() && buttonRef) {
       mouseDownTime = Date.now();
-      
+
       const rect = buttonRef.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       const size = Math.max(rect.width, rect.height) * 2;
-      
+
       const rippleId = Date.now() + Math.random();
-      
-      // Add ripple - it will automatically expand due to CSS animation
-      setRipples(prev => [...prev, { 
-        id: rippleId, 
-        x, 
-        y, 
-        size, 
-        isFading: false
-      }]);
+      setRipples((prev) => [...prev, { id: rippleId, x, y, size, isFading: false }]);
     }
   };
 
   const handleMouseUp = () => {
-    if (!hasRipple() || local.disabled) return;
-    
+    if (!hasRipple() || local.disabled || currentVariant() === 'link') return;
+
     const timeSinceMouseDown = Date.now() - mouseDownTime;
-    const minExpandTime = 400; // Match CSS animation duration
-    
-    // Calculate delay to ensure ripple finishes expanding before fading
+    const minExpandTime = 400; // ripple expand duration
+
     const delayBeforeFade = Math.max(0, minExpandTime - timeSinceMouseDown);
-    
+
     setTimeout(() => {
-      // Mark all ripples for fading
-      setRipples(prev => prev.map(ripple => ({ ...ripple, isFading: true })));
-      
-      // Remove ripples after fade animation completes
+      // Start fading ripples
+      setRipples((prev) => prev.map((ripple) => ({ ...ripple, isFading: true })));
+
+      // After fade completes, cleanup
       setTimeout(() => {
-        setRipples([]);
-      }, 400); // Match fade animation duration
+        setRipples([]); // cleanup ripples
+      }, 400); // matches ks-btn-ripple-fade animation duration
     }, delayBeforeFade);
   };
 
@@ -138,16 +187,15 @@ const Button: Component<ButtonProps> = (props) => {
   };
 
   const handleClick = (event: MouseEvent) => {
-    // Only call user's onClick handler
     if (local.onClick && !local.disabled) {
       local.onClick(event);
     }
   };
 
-  const renderContent = () => {
+  const renderContent = createMemo(() => {
     const IconComponent = local.icon;
     const iconSize = getIconSize();
-    
+
     if (isIconOnly() && IconComponent) {
       return <IconComponent size={iconSize} />;
     }
@@ -155,10 +203,18 @@ const Button: Component<ButtonProps> = (props) => {
     if (IconComponent && local.children) {
       const icon = <IconComponent size={iconSize} />;
       const position = local.iconPosition || 'left';
-      
-      return position === 'left' 
-        ? <>{icon}{local.children}</>
-        : <>{local.children}{icon}</>;
+
+      return position === 'left' ? (
+        <>
+          {icon}
+          {local.children}
+        </>
+      ) : (
+        <>
+          {local.children}
+          {icon}
+        </>
+      );
     }
 
     if (IconComponent) {
@@ -166,16 +222,21 @@ const Button: Component<ButtonProps> = (props) => {
     }
 
     return local.children;
-  };
+  });
 
-  // Cleanup ripples on unmount
+  // Cleanup
   onCleanup(() => {
     setRipples([]);
   });
 
   return (
     <button
-      ref={buttonRef}
+      ref={(el) => {
+        buttonRef = el;
+        if (typeof others.ref === 'function') {
+          others.ref(el);
+        }
+      }}
       class={classes()}
       style={local.style}
       disabled={local.disabled}
@@ -186,24 +247,24 @@ const Button: Component<ButtonProps> = (props) => {
       {...others}
     >
       {renderContent()}
-      
-      {/* Ripple effects */}
-      {hasRipple() && ripples().map(ripple => (
-        <span
-          // key={ripple.id}
-          class={cn(
-            styles['ks-btn-ripple-effect'],
-            getRippleClass(),
-            ripple.isFading && styles['ks-btn-ripple-fade']
-          )}
-          style={{
-            left: `${ripple.x - ripple.size / 2}px`,
-            top: `${ripple.y - ripple.size / 2}px`,
-            width: `${ripple.size}px`,
-            height: `${ripple.size}px`,
-          }}
-        />
-      ))}
+
+      {/* Render ripples only for non-link variants */}
+      {hasRipple() && currentVariant() !== 'link' &&
+        ripples().map((ripple) => (
+          <span
+            key={ripple.id}
+            class={cn(
+              getRippleClass(),
+              ripple.isFading && styles['ks-btn-ripple-fade']
+            )}
+            style={{
+              left: `${ripple.x - ripple.size / 2}px`,
+              top: `${ripple.y - ripple.size / 2}px`,
+              width: `${ripple.size}px`,
+              height: `${ripple.size}px`,
+            }}
+          />
+        ))}
     </button>
   );
 };

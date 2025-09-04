@@ -20,7 +20,8 @@ export default <StorybookConfig>{
     stories: [
         '../stories/**/*.mdx',
         '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)',
-        '../src/**/*.stories.@(js|jsx|ts|tsx|mdx)'
+        '../src/**/*.stories.@(js|jsx|ts|tsx|mdx)',
+        '../src/**/*.mdx'
     ],
     async viteFinal(config) {
          // Load Tailwind v4 vite plugin ONLY in Storybook
