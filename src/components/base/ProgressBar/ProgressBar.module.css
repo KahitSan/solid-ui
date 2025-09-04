@@ -1,0 +1,112 @@
+/* ProgressBar.module.css - Timer-specific animations and styling */
+
+/* Progress fill with smooth transitions */
+.ks-progress-fill {
+  position: relative;
+  border-radius: inherit;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animated progress indicator */
+.ks-progress-indicator {
+  border-radius: 0 4px 4px 0;
+  animation: ksProgressPulse 2s ease-in-out infinite;
+}
+
+/* Timer text with subtle glow */
+.ks-timer-text {
+  text-shadow: 0 0 3px currentColor;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+
+/* Timer pulse animation for urgent/warning states */
+.ks-timer-pulse {
+  animation: ksTimerGlow 2s ease-in-out infinite;
+}
+
+/* Progress pulse for warning/urgent states */
+.ks-progress-pulse {
+  animation: ksProgressBarPulse 1s ease-in-out infinite;
+}
+
+/* Keyframe animations */
+@keyframes ksProgressPulse {
+  0%, 100% { 
+    opacity: 0.8;
+  }
+  50% { 
+    opacity: 1;
+    box-shadow: 0 0 4px var(--ks-status-color, #00CC88);
+  }
+}
+
+@keyframes ksTimerGlow {
+  0%, 100% { 
+    box-shadow: 
+      0 0 5px rgba(0, 0, 0, 0.2),
+      inset 0 0 10px rgba(255, 255, 255, 0.05);
+  }
+  50% { 
+    box-shadow: 
+      0 0 15px rgba(255, 136, 51, 0.3),
+      inset 0 0 15px rgba(255, 136, 51, 0.1);
+  }
+}
+
+@keyframes ksProgressBarPulse {
+  0%, 100% { 
+    opacity: 0.8;
+    transform: scaleY(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: scaleY(1.02);
+  }
+}
+
+/* Hover effects for interactive states */
+.ks-progress-fill:hover {
+  filter: brightness(1.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .ks-timer-text {
+    letter-spacing: 0.02em;
+    font-size: 0.75rem; /* text-xs on small screens */
+  }
+  
+  .ks-progress-indicator {
+    width: 2px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .ks-timer-text {
+    text-shadow: none;
+    font-weight: 600;
+  }
+  
+  .ks-progress-indicator {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .ks-progress-fill {
+    transition: width 0.3s ease;
+  }
+  
+  .ks-progress-indicator,
+  .ks-timer-pulse,
+  .ks-progress-pulse {
+    animation: none;
+  }
+  
+  .ks-timer-text {
+    transition: none;
+  }
+}
