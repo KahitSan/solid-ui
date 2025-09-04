@@ -1,50 +1,6 @@
-/* effects.module.css */
-@import "../../../styles/tokens.css";
+/* effects.module.css - Cleaned version without redundant variants */
 
-/* Generic Variant Classes - Reusable across all components */
-.ks-variant-default {
-  background-color: rgba(201, 169, 97, 0.1);
-  border-color: rgba(201, 169, 97, 0.4);
-  color: var(--ks-hud-primary);
-}
-
-.ks-variant-primary {
-  background-color: rgba(201, 169, 97, 0.2);
-  border-color: rgba(201, 169, 97, 0.6);
-  color: var(--ks-hud-primary);
-}
-
-.ks-variant-success {
-  background-color: rgba(0, 204, 136, 0.1);
-  border-color: rgba(0, 204, 136, 0.4);
-  color: var(--ks-hud-green);
-}
-
-.ks-variant-danger {
-  background-color: rgba(255, 68, 68, 0.1);
-  border-color: rgba(255, 68, 68, 0.4);
-  color: var(--ks-hud-red);
-}
-
-.ks-variant-outline {
-  background-color: transparent;
-  border-color: rgba(201, 169, 97, 0.4);
-  color: var(--ks-hud-primary);
-}
-
-.ks-variant-ghost {
-  background-color: transparent;
-  border-color: transparent;
-  color: var(--ks-hud-primary);
-}
-
-.ks-variant-link {
-  background-color: transparent;
-  border-color: transparent;
-  color: var(--ks-hud-blue);
-}
-
-/* Scan Line Effect - Base */
+/* Scan Line Effect - Now uses CSS custom properties for dynamic colors */
 .ks-hud-scan-line {
   position: relative;
   overflow: hidden;
@@ -61,6 +17,13 @@
   pointer-events: none;
   z-index: 1;
   transition: opacity 0.2s ease;
+  /* Use CSS custom property for dynamic color */
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ks-effect-color, rgba(201, 169, 97, 0.4)),
+    transparent
+  );
 }
 
 .ks-hud-scan-line:hover::before {
@@ -69,71 +32,7 @@
   transition: all 0.8s ease;
 }
 
-/* Variant-specific scan line colors */
-.ks-hud-scan-line.ks-variant-default::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(201, 169, 97, 0.3),
-    transparent
-  );
-}
-
-.ks-hud-scan-line.ks-variant-primary::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(201, 169, 97, 0.4),
-    transparent
-  );
-}
-
-.ks-hud-scan-line.ks-variant-success::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 204, 136, 0.4),
-    transparent
-  );
-}
-
-.ks-hud-scan-line.ks-variant-danger::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 68, 68, 0.4),
-    transparent
-  );
-}
-
-.ks-hud-scan-line.ks-variant-outline::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(201, 169, 97, 0.3),
-    transparent
-  );
-}
-
-.ks-hud-scan-line.ks-variant-ghost::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(201, 169, 97, 0.4),
-    transparent
-  );
-}
-
-.ks-hud-scan-line.ks-variant-link::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(74, 158, 255, 0.3),
-    transparent
-  );
-}
-
-/* Two-Corner Clip Path Effects */
+/* Clip Path Effects - These stay the same */
 .ks-hud-clip-top-left-bottom-right {
   clip-path: polygon(
     6px 0, 
@@ -186,16 +85,15 @@
   border-radius: 0 !important;
 }
 
-/* Alternative clip effect that works with borders - Inset border effect */
+/* Inset clip effect using CSS custom properties */
 .ks-hud-clip-inset-top-left-bottom-right {
   position: relative;
   border: none !important;
   background: transparent !important;
-  overflow: hidden; /* Prevent expansion */
-  transform: none !important; /* Prevent any scaling */
+  overflow: hidden;
+  transform: none !important;
 }
 
-/* Override all transform effects for clip-inset */
 .ks-hud-clip-inset-top-left-bottom-right:hover,
 .ks-hud-clip-inset-top-left-bottom-right:focus,
 .ks-hud-clip-inset-top-left-bottom-right:active {
@@ -217,16 +115,16 @@
     0 100%, 
     0 4px
   );
-  background: rgba(201, 169, 97, 0.1);
-  border: 1px solid rgba(201, 169, 97, 0.4);
+  background: var(--ks-effect-bg, rgba(201, 169, 97, 0.1));
+  border: 1px solid var(--ks-effect-border, rgba(201, 169, 97, 0.4));
   z-index: -1;
   pointer-events: none;
   box-sizing: border-box;
 }
 
 .ks-hud-clip-inset-top-left-bottom-right:hover::before {
-  background: rgba(201, 169, 97, 0.2);
-  border-color: rgba(201, 169, 97, 0.6);
+  background: var(--ks-effect-bg-hover, rgba(201, 169, 97, 0.2));
+  border-color: var(--ks-effect-border-hover, rgba(201, 169, 97, 0.6));
 }
 
 .ks-hud-clip-inset-top-left-bottom-right > * {
@@ -234,189 +132,29 @@
   z-index: 2;
 }
 
-/* Glow Effect - Base */
+/* Glow Effect using CSS custom properties */
 .ks-hud-glow {
   transition: box-shadow 0.2s ease;
+  box-shadow: 0 0 8px var(--ks-effect-glow, rgba(201, 169, 97, 0.3));
 }
 
-/* Variant-specific glow effects */
-.ks-hud-glow.ks-variant-default {
-  box-shadow: 0 0 8px rgba(201, 169, 97, 0.2);
+.ks-hud-glow:hover:not(:disabled) {
+  box-shadow: 0 0 15px var(--ks-effect-glow-hover, rgba(201, 169, 97, 0.5));
 }
 
-.ks-hud-glow.ks-variant-default:hover:not(:disabled) {
-  box-shadow: 0 0 15px rgba(201, 169, 97, 0.4);
-}
-
-.ks-hud-glow.ks-variant-primary {
-  box-shadow: 0 0 8px rgba(201, 169, 97, 0.3);
-}
-
-.ks-hud-glow.ks-variant-primary:hover:not(:disabled) {
-  box-shadow: 0 0 15px rgba(201, 169, 97, 0.5);
-}
-
-.ks-hud-glow.ks-variant-success {
-  box-shadow: 0 0 8px rgba(0, 204, 136, 0.3);
-}
-
-.ks-hud-glow.ks-variant-success:hover:not(:disabled) {
-  box-shadow: 0 0 15px rgba(0, 204, 136, 0.5);
-}
-
-.ks-hud-glow.ks-variant-danger {
-  box-shadow: 0 0 8px rgba(255, 68, 68, 0.3);
-}
-
-.ks-hud-glow.ks-variant-danger:hover:not(:disabled) {
-  box-shadow: 0 0 15px rgba(255, 68, 68, 0.5);
-}
-
-.ks-hud-glow.ks-variant-outline {
-  box-shadow: 0 0 8px rgba(201, 169, 97, 0.2);
-}
-
-.ks-hud-glow.ks-variant-outline:hover:not(:disabled) {
-  box-shadow: 0 0 15px rgba(201, 169, 97, 0.4);
-}
-
-.ks-hud-glow.ks-variant-ghost {
-  box-shadow: 0 0 8px rgba(201, 169, 97, 0.1);
-}
-
-.ks-hud-glow.ks-variant-ghost:hover:not(:disabled) {
-  box-shadow: 0 0 15px rgba(201, 169, 97, 0.3);
-}
-
-.ks-hud-glow.ks-variant-link {
-  box-shadow: 0 0 8px rgba(74, 158, 255, 0.3);
-}
-
-.ks-hud-glow.ks-variant-link:hover:not(:disabled) {
-  box-shadow: 0 0 15px rgba(74, 158, 255, 0.5);
-}
-
-/* Enhanced Pulse Animation - More visible */
+/* Pulse Effect using CSS custom properties */
 .ks-hud-pulse {
   animation: ksHudPulse 2s infinite ease-in-out;
 }
 
-/* Make pulse more visible with background changes and stronger effects */
-.ks-hud-pulse.ks-variant-default {
-  animation: ksHudPulseDefault 2s infinite ease-in-out;
-}
-
-.ks-hud-pulse.ks-variant-primary {
-  animation: ksHudPulsePrimary 2s infinite ease-in-out;
-}
-
-.ks-hud-pulse.ks-variant-success {
-  animation: ksHudPulseSuccess 2s infinite ease-in-out;
-}
-
-.ks-hud-pulse.ks-variant-danger {
-  animation: ksHudPulseDanger 2s infinite ease-in-out;
-}
-
-.ks-hud-pulse.ks-variant-outline {
-  animation: ksHudPulseOutline 2s infinite ease-in-out;
-}
-
-.ks-hud-pulse.ks-variant-ghost {
-  animation: ksHudPulseGhost 2s infinite ease-in-out;
-}
-
-.ks-hud-pulse.ks-variant-link {
-  animation: ksHudPulseLink 2s infinite ease-in-out;
-}
-
-/* Pulse keyframes for different variants */
-@keyframes ksHudPulseDefault {
-  0%, 100% {
-    background-color: rgba(201, 169, 97, 0.1);
-    box-shadow: 0 0 5px rgba(201, 169, 97, 0.2);
-  }
-  50% {
-    background-color: rgba(201, 169, 97, 0.2);
-    box-shadow: 0 0 10px rgba(201, 169, 97, 0.4);
-  }
-}
-
-@keyframes ksHudPulsePrimary {
-  0%, 100% {
-    background-color: rgba(201, 169, 97, 0.2);
-    box-shadow: 0 0 5px rgba(201, 169, 97, 0.3);
-  }
-  50% {
-    background-color: rgba(201, 169, 97, 0.35);
-    box-shadow: 0 0 12px rgba(201, 169, 97, 0.5);
-  }
-}
-
-@keyframes ksHudPulseSuccess {
-  0%, 100% {
-    background-color: rgba(0, 204, 136, 0.1);
-    box-shadow: 0 0 5px rgba(0, 204, 136, 0.3);
-  }
-  50% {
-    background-color: rgba(0, 204, 136, 0.25);
-    box-shadow: 0 0 12px rgba(0, 204, 136, 0.5);
-  }
-}
-
-@keyframes ksHudPulseDanger {
-  0%, 100% {
-    background-color: rgba(255, 68, 68, 0.1);
-    box-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
-  }
-  50% {
-    background-color: rgba(255, 68, 68, 0.25);
-    box-shadow: 0 0 12px rgba(255, 68, 68, 0.5);
-  }
-}
-
-@keyframes ksHudPulseOutline {
-  0%, 100% {
-    background-color: transparent;
-    border-color: rgba(201, 169, 97, 0.4);
-    box-shadow: 0 0 5px rgba(201, 169, 97, 0.2);
-  }
-  50% {
-    background-color: rgba(201, 169, 97, 0.1);
-    border-color: rgba(201, 169, 97, 0.7);
-    box-shadow: 0 0 10px rgba(201, 169, 97, 0.4);
-  }
-}
-
-@keyframes ksHudPulseGhost {
-  0%, 100% {
-    background-color: transparent;
-    box-shadow: 0 0 5px rgba(201, 169, 97, 0.1);
-  }
-  50% {
-    background-color: rgba(201, 169, 97, 0.15);
-    box-shadow: 0 0 10px rgba(201, 169, 97, 0.3);
-  }
-}
-
-@keyframes ksHudPulseLink {
-  0%, 100% {
-    color: var(--ks-hud-blue);
-    text-shadow: 0 0 5px rgba(74, 158, 255, 0.3);
-  }
-  50% {
-    color: rgba(74, 158, 255, 1);
-    text-shadow: 0 0 10px rgba(74, 158, 255, 0.6);
-  }
-}
-
-/* Fallback pulse for base class */
 @keyframes ksHudPulse {
   0%, 100% {
-    opacity: 0.8;
+    background-color: var(--ks-effect-pulse-bg, rgba(201, 169, 97, 0.1));
+    box-shadow: 0 0 5px var(--ks-effect-pulse-glow, rgba(201, 169, 97, 0.2));
   }
   50% {
-    opacity: 1;
+    background-color: var(--ks-effect-pulse-bg-mid, rgba(201, 169, 97, 0.2));
+    box-shadow: 0 0 10px var(--ks-effect-pulse-glow-mid, rgba(201, 169, 97, 0.4));
   }
 }
 

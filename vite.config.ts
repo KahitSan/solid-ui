@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'node:path';
+import tailwindcss from '@tailwindcss/vite'
 
 import type { Plugin } from "rollup";
 import path from "path";
@@ -101,6 +102,7 @@ export function injectIntoCssHelperAndRename(): Plugin {
 export default defineConfig({
   plugins: [
     solid(),
+    tailwindcss(),
     dts({
       insertTypesEntry: true,
       copyDtsFiles: true,
@@ -113,7 +115,7 @@ export default defineConfig({
   css: {
     modules: {
       generateScopedName: process.env.STORYBOOK
-      ? '[name]__[local]' // readable in storybook
+      ? '[local]' // readable in storybook
       : '[hash:base64:3][name]__[local]___[hash:base64:5]' // hashed in build
     },
     postcss: './postcss.config.js'

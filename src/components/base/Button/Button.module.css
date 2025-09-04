@@ -1,163 +1,13 @@
-/* Button.module.css */
-@import "../../../styles/tokens.css";
+/* Button.module.css - Updated to use CSS custom properties */
 @import "./effects.module.css";
 
-/* Base Button Styles */
-.ks-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: var(--ks-radius-md);
-  font-weight: 500;
-  font-family: var(--ks-font-family);
-  transition: all 200ms ease;
-  cursor: pointer;
-  border: 1px solid transparent;
-  position: relative;
-  overflow: hidden;
-}
-
-.ks-btn:hover:not(:disabled) {
-  transform: scale(1.02);
-}
-
-.ks-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.ks-btn:disabled:hover {
-  transform: none;
-}
-
-/* Size Variants */
-.ks-btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
-  line-height: 1rem;
-}
-
-.ks-btn-md {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.ks-btn-lg {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  line-height: 1.5rem;
-}
-
-/* Icon-only variants */
-.ks-btn-icon-only.ks-btn-sm {
-  padding: 0.375rem;
-  min-width: auto;
-  aspect-ratio: 1;
-}
-
-.ks-btn-icon-only.ks-btn-md {
-  padding: 0.5rem;
-  min-width: auto;
-  aspect-ratio: 1;
-}
-
-.ks-btn-icon-only.ks-btn-lg {
-  padding: 0.75rem;
-  min-width: auto;
-  aspect-ratio: 1;
-}
-
-/* Button-specific variant styles (overrides generic ones) */
-.ks-btn.ks-variant-default {
-  background-color: rgba(201, 169, 97, 0.1);
-  border-color: rgba(201, 169, 97, 0.4);
-  color: var(--ks-hud-primary);
-}
-
-.ks-btn.ks-variant-default:hover:not(:disabled) {
-  background-color: rgba(201, 169, 97, 0.2);
-  border-color: rgba(201, 169, 97, 0.6);
-}
-
-.ks-btn.ks-variant-primary {
-  background-color: rgba(201, 169, 97, 0.2);
-  border-color: rgba(201, 169, 97, 0.6);
-  color: var(--ks-hud-primary);
-}
-
-.ks-btn.ks-variant-primary:hover:not(:disabled) {
-  background-color: rgba(201, 169, 97, 0.3);
-  border-color: var(--ks-hud-primary);
-}
-
-.ks-btn.ks-variant-success {
-  background-color: rgba(0, 204, 136, 0.1);
-  border-color: rgba(0, 204, 136, 0.4);
-  color: var(--ks-hud-green);
-}
-
-.ks-btn.ks-variant-success:hover:not(:disabled) {
-  background-color: rgba(0, 204, 136, 0.2);
-  border-color: rgba(0, 204, 136, 0.6);
-}
-
-.ks-btn.ks-variant-danger {
-  background-color: rgba(255, 68, 68, 0.1);
-  border-color: rgba(255, 68, 68, 0.4);
-  color: var(--ks-hud-red);
-}
-
-.ks-btn.ks-variant-danger:hover:not(:disabled) {
-  background-color: rgba(255, 68, 68, 0.2);
-  border-color: rgba(255, 68, 68, 0.6);
-}
-
-.ks-btn.ks-variant-outline {
-  background-color: transparent;
-  border-color: rgba(201, 169, 97, 0.4);
-  color: var(--ks-hud-primary);
-  border-width: 2px;
-}
-
-.ks-btn.ks-variant-outline:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(201, 169, 97, 0.6);
-}
-
-.ks-btn.ks-variant-ghost {
-  background-color: transparent;
-  border-color: transparent;
-  color: var(--ks-hud-primary);
-}
-
-.ks-btn.ks-variant-ghost:hover:not(:disabled) {
-  background-color: rgba(201, 169, 97, 0.1);
-}
-
-.ks-btn.ks-variant-link {
-  background-color: transparent;
-  border-color: transparent;
-  color: var(--ks-hud-blue);
-  text-decoration: none;
-}
-
-.ks-btn.ks-variant-link:hover:not(:disabled) {
-  text-decoration: underline;
-  background-color: rgba(74, 158, 255, 0.05);
-}
-
-.ks-btn.ks-variant-link:focus {
-  text-decoration: underline;
-}
-
-/* Ripple Effect */
+/* Ripple Effect Container */
 .ks-btn-ripple {
   position: relative;
   overflow: hidden;
 }
 
+/* Ripple Animation Elements - Now uses CSS custom property for color */
 .ks-btn-ripple-effect {
   position: absolute;
   border-radius: 50%;
@@ -166,39 +16,8 @@
   animation: ksButtonRippleExpand 0.4s ease-out forwards;
   pointer-events: none;
   z-index: 0;
-}
-
-/* Ripple Colors by Variant */
-.ks-btn-ripple-effect.ks-variant-default {
-  background-color: rgba(201, 169, 97, 0.4);
-}
-
-.ks-btn-ripple-effect.ks-variant-primary {
-  background-color: rgba(201, 169, 97, 0.4);
-}
-
-.ks-btn-ripple-effect.ks-variant-success {
-  background-color: rgba(0, 204, 136, 0.4);
-}
-
-.ks-btn-ripple-effect.ks-variant-danger {
-  background-color: rgba(255, 68, 68, 0.4);
-}
-
-.ks-btn-ripple-effect.ks-variant-outline {
-  background-color: rgba(201, 169, 97, 0.4); /* Use primary color instead */
-}
-
-/* Replace existing ripple color classes with this logic */
-
-/* Use primary-like ripple for ghost */
-.ks-btn-ripple-effect.ks-variant-ghost {
-  background-color: rgba(201, 169, 97, 0.3); /* consistent with primary */
-}
-
-/* Remove ripple entirely for link — we'll handle with blink */
-.ks-btn-ripple-effect.ks-variant-link {
-  display: none;
+  /* Color now set dynamically via style attribute using --ks-ripple-color */
+  background-color: var(--ks-ripple-color, rgba(255, 255, 255, 0.3));
 }
 
 .ks-btn-ripple-fade {
@@ -228,8 +47,31 @@
 }
 
 /* Ensure content stays above effects */
-.ks-btn > *:not(.ks-btn-ripple-effect) {
+.ks-btn-ripple > *:not(.ks-btn-ripple-effect) {
   position: relative;
   z-index: 2;
 }
 
+/* Link Blink Effect */
+.ks-btn-link-blink {
+  animation: linkBlink 0.3s ease-out;
+}
+
+@keyframes linkBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Interactive effect for non-ripple buttons */
+.ks-interactive {
+  transition: all 0.15s ease;
+}
+
+.ks-interactive:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.8;
+}
+
+.ks-interactive:hover:not(:disabled) {
+  transform: scale(1.02);
+}
