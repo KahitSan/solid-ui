@@ -1,59 +1,31 @@
-/* ProgressBar.module.css - Timer-specific animations and styling */
+/* ProgressBar.module.css - Refined animations for progress bar */
 
 /* Progress fill with smooth transitions */
 .ks-progress-fill {
   position: relative;
-  border-radius: inherit;
+  border-radius: 0;
   transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 /* Animated progress indicator */
 .ks-progress-indicator {
-  border-radius: 0 4px 4px 0;
-  animation: ksProgressPulse 2s ease-in-out infinite;
+  border-radius: 0;
+  box-shadow: 0 0 2px currentColor;
 }
 
 /* Timer text with subtle glow */
 .ks-timer-text {
   text-shadow: 0 0 3px currentColor;
   letter-spacing: 0.05em;
-  transition: all 0.3s ease;
 }
 
-/* Timer pulse animation for urgent/warning states */
-.ks-timer-pulse {
-  animation: ksTimerGlow 2s ease-in-out infinite;
-}
-
-/* Progress pulse for warning/urgent states */
+/* Progress pulse for urgent countdown states */
 .ks-progress-pulse {
   animation: ksProgressBarPulse 1s ease-in-out infinite;
 }
 
 /* Keyframe animations */
-@keyframes ksProgressPulse {
-  0%, 100% { 
-    opacity: 0.8;
-  }
-  50% { 
-    opacity: 1;
-    box-shadow: 0 0 4px var(--ks-status-color, #00CC88);
-  }
-}
-
-@keyframes ksTimerGlow {
-  0%, 100% { 
-    box-shadow: 
-      0 0 5px rgba(0, 0, 0, 0.2),
-      inset 0 0 10px rgba(255, 255, 255, 0.05);
-  }
-  50% { 
-    box-shadow: 
-      0 0 15px rgba(255, 136, 51, 0.3),
-      inset 0 0 15px rgba(255, 136, 51, 0.1);
-  }
-}
-
 @keyframes ksProgressBarPulse {
   0%, 100% { 
     opacity: 0.8;
@@ -65,33 +37,31 @@
   }
 }
 
-/* Hover effects for interactive states */
-.ks-progress-fill:hover {
-  filter: brightness(1.1);
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .ks-timer-text {
-    letter-spacing: 0.02em;
-    font-size: 0.75rem; /* text-xs on small screens */
+/* Shimmer effect - contained within progress bar */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-25deg);
   }
-  
-  .ks-progress-indicator {
-    width: 2px;
+  100% {
+    transform: translateX(100%) skewX(-25deg);
   }
 }
 
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .ks-timer-text {
-    text-shadow: none;
-    font-weight: 600;
-  }
-  
-  .ks-progress-indicator {
-    opacity: 1;
-  }
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  background-size: 200% 100%;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.7;
 }
 
 /* Reduced motion support */
@@ -100,13 +70,24 @@
     transition: width 0.3s ease;
   }
   
-  .ks-progress-indicator,
-  .ks-timer-pulse,
-  .ks-progress-pulse {
+  .ks-progress-pulse,
+  .ks-progress-loop {
     animation: none;
   }
   
-  .ks-timer-text {
-    transition: none;
+  /* For loop mode without animation, show 50% progress */
+  .ks-progress-loop {
+    width: 50% !important;
   }
+}
+
+/* Stripe pattern for excess indicator */
+.bg-striped {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.1) 10px,
+    rgba(255, 255, 255, 0.2) 10px,
+    rgba(255, 255, 255, 0.2) 20px
+  );
 }

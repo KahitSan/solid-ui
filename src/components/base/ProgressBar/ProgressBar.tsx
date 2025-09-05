@@ -1,228 +1,301 @@
-import { Component, JSX, splitProps, createMemo, mergeProps } from 'solid-js';
+import { Component, JSX, splitProps, createMemo } from 'solid-js';
 import { Clock } from 'lucide-solid';
 import styles from './ProgressBar.module.css';
 
-export type ProgressBarStatus = 'active' | 'warning' | 'urgent' | 'completed' | 'paused';
-export type ProgressBarSize = 'sm' | 'md' | 'lg';
-
 export interface ProgressBarProps extends JSX.HTMLAttributes<HTMLDivElement> {
   // Core functionality
-  progress: number; // 0-100
-  timeRemaining: string;
-  status?: ProgressBarStatus;
-  
+  progress: number; // Required progress percentage (0-100 for normal, >100 for overdue)
+
   // Display options
-  size?: ProgressBarSize;
-  showPercentage?: boolean;
-  showIcon?: boolean;
-  label?: string;
-  
+  icon?: Component<{ size: number; class?: string }>; // Custom icon component
+  label?: string; // Additional label (right side)
+  statusLabel?: string; // Status label (left side)
+  shimmer?: boolean; // Whether to show continuous shimmer effect
+
+  // Positioning
+  position?: 'left' | 'right'; // Direction of progress fill
+
   // Styling
   class?: string;
 }
 
+// Utility to combine class names
 function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-const ProgressBar: Component<ProgressBarProps> = (props) => {
-  // Default props
-  const defaultProps = {
-    status: 'active' as const,
-    size: 'md' as const,
-    showPercentage: true,
-    showIcon: true,
+// Utility to extract color family from Tailwind classes
+function extractColorInfo(className: string) {
+  const colorMap = {
+    'red': {
+      fill: 'rgba(255, 68, 68, 0.2)',
+      indicator: '#FF4444',
+      stripe: 'rgba(255, 68, 68, 0.4)',
+      overdue: 'rgba(255, 68, 68, 0.4)',
+      shimmer: 'rgba(255, 68, 68, 0.3)',
+    },
+    'green': {
+      fill: 'rgba(0, 204, 136, 0.2)',
+      indicator: '#00CC88',
+      stripe: 'rgba(0, 204, 136, 0.4)',
+      overdue: 'rgba(0, 204, 136, 0.4)',
+      shimmer: 'rgba(0, 204, 136, 0.3)',
+    },
+    'blue': {
+      fill: 'rgba(74, 158, 255, 0.2)',
+      indicator: '#4A9EFF',
+      stripe: 'rgba(74, 158, 255, 0.4)',
+      overdue: 'rgba(74, 158, 255, 0.4)',
+      shimmer: 'rgba(74, 158, 255, 0.3)',
+    },
+    'amber': {
+      fill: 'rgba(245, 158, 11, 0.2)',
+      indicator: '#F59E0B',
+      stripe: 'rgba(245, 158, 11, 0.4)',
+      overdue: 'rgba(245, 158, 11, 0.4)',
+      shimmer: 'rgba(245, 158, 11, 0.3)',
+    },
+    'orange': {
+      fill: 'rgba(255, 136, 51, 0.2)',
+      indicator: '#FF8833',
+      stripe: 'rgba(255, 136, 51, 0.4)',
+      overdue: 'rgba(255, 136, 51, 0.4)',
+      shimmer: 'rgba(255, 136, 51, 0.3)',
+    },
+    'purple': {
+      fill: 'rgba(168, 85, 247, 0.2)',
+      indicator: '#A855F7',
+      stripe: 'rgba(168, 85, 247, 0.4)',
+      overdue: 'rgba(168, 85, 247, 0.4)',
+      shimmer: 'rgba(168, 85, 247, 0.3)',
+    },
+    'slate': {
+      fill: 'rgba(148, 163, 184, 0.2)',
+      indicator: '#94A3B8',
+      stripe: 'rgba(148, 163, 184, 0.4)',
+      overdue: 'rgba(148, 163, 184, 0.4)',
+      shimmer: 'rgba(148, 163, 184, 0.3)',
+    },
+    'gray': {
+      fill: 'rgba(156, 163, 175, 0.2)',
+      indicator: '#9CA3AF',
+      stripe: 'rgba(156, 163, 175, 0.4)',
+      overdue: 'rgba(156, 163, 175, 0.4)',
+      shimmer: 'rgba(156, 163, 175, 0.3)',
+    },
   };
 
-  const merged = mergeProps(defaultProps, props);
-  
-  const [local, others] = splitProps(merged, [
+  for (const [colorName, colorValues] of Object.entries(colorMap)) {
+    if (className.includes(colorName)) {
+      return colorValues;
+    }
+  }
+
+  return colorMap.green; // default
+}
+
+// Extract text size for icon scaling
+function extractTextSize(className: string): number {
+  if (className.includes('text-xs')) return 12;
+  if (className.includes('text-sm')) return 14;
+  if (className.includes('text-base')) return 16;
+  if (className.includes('text-lg')) return 18;
+  if (className.includes('text-xl')) return 20;
+  if (className.includes('text-2xl')) return 24;
+  return 16; // default
+}
+
+const ProgressBar: Component<ProgressBarProps> = (props) => {
+  const [local, others] = splitProps(props, [
     'progress',
-    'timeRemaining', 
-    'status',
-    'size',
-    'showPercentage',
-    'showIcon',
+    'icon',
     'label',
+    'statusLabel',
+    'shimmer',
+    'position',
     'class',
   ]);
 
-  // Status information with colors and behavior
-  const statusInfo = createMemo(() => {
-    const statusMap = {
-      active: {
-        color: '#00CC88',
-        bgColor: 'rgba(0, 204, 136, 0.15)',
-        borderColor: 'rgba(0, 204, 136, 0.3)',
-        shouldPulse: false,
-      },
-      warning: {
-        color: '#FF8833',
-        bgColor: 'rgba(255, 136, 51, 0.15)',
-        borderColor: 'rgba(255, 136, 51, 0.3)',
-        shouldPulse: true,
-      },
-      urgent: {
-        color: '#FF4444',
-        bgColor: 'rgba(255, 68, 68, 0.15)',
-        borderColor: 'rgba(255, 68, 68, 0.3)',
-        shouldPulse: true,
-      },
-      completed: {
-        color: '#8A8A8A',
-        bgColor: 'rgba(138, 138, 138, 0.15)',
-        borderColor: 'rgba(138, 138, 138, 0.3)',
-        shouldPulse: false,
-      },
-      paused: {
-        color: '#4A9EFF',
-        bgColor: 'rgba(74, 158, 255, 0.15)',
-        borderColor: 'rgba(74, 158, 255, 0.3)',
-        shouldPulse: false,
-      },
-    };
+  // ✅ Use accessors for reactivity with defaults
+  const progressVal = () => local.progress ?? 0;
+  const Icon = () => local.icon ?? null;
+  const position = () => local.position ?? 'left';
+  const shimmer = () => local.shimmer ?? false;
+  const statusLabel = () => local.statusLabel;
+  const label = () => local.label;
+  const classProp = () => local.class;
 
-    return statusMap[local.status];
+  // Calculate progress and overdue
+  const progressInfo = createMemo(() => {
+    const p = Math.max(0, Math.min(100, progressVal()));
+    const overdue = Math.max(0, progressVal() - 100);
+    return { progress: p, overdue };
   });
 
-  // Size configurations
-  const sizeConfig = createMemo(() => {
-    const sizeMap = {
-      sm: {
-        height: 'h-6',
-        textSize: 'text-xs',
-        iconSize: 12,
-      },
-      md: {
-        height: 'h-8',
-        textSize: 'text-sm',
-        iconSize: 16,
-      },
-      lg: {
-        height: 'h-10',
-        textSize: 'text-base',
-        iconSize: 20,
-      },
-    };
+  // Extract color info from class
+  const colorInfo = createMemo(() => extractColorInfo(classProp() || ''));
 
-    return sizeMap[local.size];
-  });
+  // Extract icon size from text class
+  const iconSize = createMemo(() => extractTextSize(classProp() || ''));
 
-  // Container classes
+  // Container classes with defaults
   const containerClasses = createMemo(() => {
-    const config = sizeConfig();
-    const status = statusInfo();
-    
     return cn(
-      'relative overflow-hidden rounded border transition-all duration-300',
-      config.height,
-      'bg-black/30',
-      // Default width on small screens; full width on mobile if no class sets width
-      !local.class?.includes('w-') ? 'w-full sm:w-80' : '',
-      status.shouldPulse && styles['ks-timer-pulse'],
-      local.class
+      'select-none relative overflow-hidden rounded bg-black/20 border border-gray-600/30',
+      'h-8', // default height
+      !classProp()?.includes('w-') ? 'w-80' : '', // default width
+      classProp()
     );
   });
 
-  // Dynamic styles for theming
-  const containerStyle = createMemo(() => {
-    const status = statusInfo();
-    return {
-      'border-color': status.borderColor,
-    };
-  });
-
+  // Progress fill style
   const progressStyle = createMemo(() => {
-    const status = statusInfo();
+    const colors = colorInfo();
+    const { progress } = progressInfo();
+    const isRight = position() === 'right';
+
     return {
-      width: `${Math.max(0, Math.min(100, local.progress))}%`,
-      'background-color': status.bgColor,
-      '--ks-status-color': status.color,
+      width: `${progress}%`,
+      'background-color': colors.fill,
+      ...(isRight && {
+        position: 'absolute',
+        right: 0,
+        'border-radius': '0 4px 4px 0',
+      }),
     };
   });
 
-  const textStyle = createMemo(() => {
-    const status = statusInfo();
+  // Overdue section style
+  const overdueStyle = createMemo(() => {
+    const colors = colorInfo();
+    const { overdue } = progressInfo();
+    const isRight = position() === 'right';
+    const visibleOverdue = Math.min(90, overdue); // cap visualization
+
+    if (isRight) {
+      return {
+        width: `${visibleOverdue}%`,
+        'background-color': colors.overdue,
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        height: '100%',
+        'border-radius': '4px 0 0 4px',
+      };
+    } else {
+      const startPosition = Math.max(10, 100 - visibleOverdue);
+      return {
+        width: `${visibleOverdue}%`,
+        'background-color': colors.overdue,
+        position: 'absolute',
+        left: `${startPosition}%`,
+        top: 0,
+        height: '100%',
+        'border-radius': '0 4px 4px 0',
+      };
+    }
+  });
+
+  // Indicator line style (progress edge)
+  const indicatorStyle = createMemo(() => {
+    const colors = colorInfo();
+    const isRight = position() === 'right';
     return {
-      color: status.color,
+      'background-color': colors.indicator,
+      ...(isRight ? { left: 0 } : { right: 0 }),
     };
   });
+
+  // Overdue indicator line style
+  const overdueIndicatorStyle = createMemo(() => {
+    const colors = colorInfo();
+    const isRight = position() === 'right';
+    return {
+      'background-color': colors.indicator,
+      ...(isRight ? { right: 0 } : { left: 0 }),
+    };
+  });
+
+  // Text/icon color based on theme
+  const textColor = createMemo(() => ({
+    color: colorInfo().indicator,
+  }));
+
+  // Shimmer animation style
+  const shimmerStyle = createMemo(() => ({
+    background: `linear-gradient(90deg, transparent, ${colorInfo().shimmer}, transparent)`,
+  }));
 
   return (
-    <div
-      class={containerClasses()}
-      style={containerStyle()}
-      {...others}
-    >
-      {/* Progress fill background */}
-      <div 
-        class={cn(
-          'h-full transition-all duration-1000 relative',
-          styles['ks-progress-fill'],
-          statusInfo().shouldPulse && styles['ks-progress-pulse']
-        )}
+    <div class={containerClasses()} {...others}>
+      {/* Progress fill */}
+      <div
+        class={cn('h-full transition-all duration-1000 relative', styles['ks-progress-fill'])}
         style={progressStyle()}
       >
-        {/* Animated indicator line at the right edge */}
-        <div 
-          class={cn(
-            'absolute top-0 right-0 w-1 h-full',
-            styles['ks-progress-indicator']
-          )}
-          style={{ 'background-color': statusInfo().color }}
-        />
+        {/* Shimmer effect */}
+        {shimmer() && progressInfo().overdue <= 0 && (
+          <div
+            class={cn('absolute inset-0', styles['animate-shimmer'])}
+            style={shimmerStyle()}
+          />
+        )}
+
+        {/* Progress indicator line */}
+        {progressInfo().overdue <= 0 && (
+          <div
+            class="absolute top-0 w-1 h-full ks-progress-indicator animate-pulse"
+            style={indicatorStyle()}
+          />
+        )}
       </div>
 
-      {/* Content overlay with proper spacing */}
+      {/* Overdue section */}
+      {progressInfo().overdue > 0 && (
+        <div
+          class={cn('transition-all duration-1000 relative animate-pulse', styles['ks-progress-overdue'])}
+          style={overdueStyle()}
+        >
+          <div
+            class="absolute top-0 w-1 h-full ks-progress-indicator animate-pulse"
+            style={overdueIndicatorStyle()}
+          />
+        </div>
+      )}
+
+      {/* Content overlay */}
       <div class="absolute inset-0 flex items-center justify-between px-3">
-        {/* Left side - Timer and label */}
+        {/* Left side: icon, status, label */}
         <div class="flex items-center gap-2 min-w-0 flex-1">
-          {local.showIcon && (
-            <Clock 
-              size={sizeConfig().iconSize} 
-              style={textStyle()}
-            />
+          {(() => {
+            const IconComponent = Icon();
+            return IconComponent ? <IconComponent size={iconSize()} style={textColor()} /> : null;
+          })()}
+
+          {statusLabel() && (
+            <span class="font-medium" style={textColor()}>
+              {statusLabel()}
+            </span>
           )}
-          <span 
-            class={cn(
-              sizeConfig().textSize,
-              'font-mono font-medium',
-              styles['ks-timer-text']
-            )}
-            style={textStyle()}
-          >
-            {local.timeRemaining}
-          </span>
-          {local.label && (
+
+          {label() && (
             <>
-              <span class="text-gray-500 mx-1">•</span>
+              {(Icon() || statusLabel()) && <span class="text-gray-500 mx-1">•</span>}
               <span class="flex-1 min-w-0">
-                <span 
-                  class={cn(
-                    sizeConfig().textSize,
-                    'text-gray-400 block overflow-hidden text-ellipsis whitespace-nowrap'
-                  )}
-                >
-                  {local.label}
+                <span class="text-gray-400 block overflow-hidden text-ellipsis whitespace-nowrap">
+                  {label()}
                 </span>
               </span>
             </>
           )}
         </div>
 
-        {/* Right side - Percentage */}
-        {local.showPercentage && (
-          <div class="flex-shrink-0 ml-2 text-right">
-            <span 
-              class={cn(
-                sizeConfig().textSize,
-                'font-mono font-medium text-gray-400'
-              )}
-            >
-              {Math.round(local.progress)}%
-            </span>
-          </div>
-        )}
+        {/* Right side: percentage */}
+        <div class="flex-shrink-0 ml-2 text-right">
+          <span class="font-mono font-medium text-gray-400">
+            {Math.round(progressVal())}%
+          </span>
+        </div>
       </div>
     </div>
   );
