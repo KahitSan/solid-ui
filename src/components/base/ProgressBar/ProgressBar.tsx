@@ -4,7 +4,7 @@ import styles from './ProgressBar.module.css';
 
 export interface ProgressBarProps extends JSX.HTMLAttributes<HTMLDivElement> {
   // Core functionality
-  progress: number; // Required progress percentage (0-100 for normal, >100 for overdue)
+  progress: number; // Required progress percentage (0-100 for normal, >100 for overflow)
 
   // Display options
   icon?: Component<{ size: number; class?: string }>; // Custom icon component
@@ -14,6 +14,9 @@ export interface ProgressBarProps extends JSX.HTMLAttributes<HTMLDivElement> {
 
   // Positioning
   position?: 'left' | 'right'; // Direction of progress fill
+  
+  // Percentage visibility
+  hidePercentage?: boolean; // Whether to hide the percentage text
 
   // Styling
   class?: string;
@@ -31,56 +34,56 @@ function extractColorInfo(className: string) {
       fill: 'rgba(255, 68, 68, 0.2)',
       indicator: '#FF4444',
       stripe: 'rgba(255, 68, 68, 0.4)',
-      overdue: 'rgba(255, 68, 68, 0.4)',
+      overflow: 'rgba(255, 68, 68, 0.4)',
       shimmer: 'rgba(255, 68, 68, 0.3)',
     },
     'green': {
       fill: 'rgba(0, 204, 136, 0.2)',
       indicator: '#00CC88',
       stripe: 'rgba(0, 204, 136, 0.4)',
-      overdue: 'rgba(0, 204, 136, 0.4)',
+      overflow: 'rgba(0, 204, 136, 0.4)',
       shimmer: 'rgba(0, 204, 136, 0.3)',
     },
     'blue': {
       fill: 'rgba(74, 158, 255, 0.2)',
       indicator: '#4A9EFF',
       stripe: 'rgba(74, 158, 255, 0.4)',
-      overdue: 'rgba(74, 158, 255, 0.4)',
+      overflow: 'rgba(74, 158, 255, 0.4)',
       shimmer: 'rgba(74, 158, 255, 0.3)',
     },
     'amber': {
       fill: 'rgba(245, 158, 11, 0.2)',
       indicator: '#F59E0B',
       stripe: 'rgba(245, 158, 11, 0.4)',
-      overdue: 'rgba(245, 158, 11, 0.4)',
+      overflow: 'rgba(245, 158, 11, 0.4)',
       shimmer: 'rgba(245, 158, 11, 0.3)',
     },
     'orange': {
       fill: 'rgba(255, 136, 51, 0.2)',
       indicator: '#FF8833',
       stripe: 'rgba(255, 136, 51, 0.4)',
-      overdue: 'rgba(255, 136, 51, 0.4)',
+      overflow: 'rgba(255, 136, 51, 0.4)',
       shimmer: 'rgba(255, 136, 51, 0.3)',
     },
     'purple': {
       fill: 'rgba(168, 85, 247, 0.2)',
       indicator: '#A855F7',
       stripe: 'rgba(168, 85, 247, 0.4)',
-      overdue: 'rgba(168, 85, 247, 0.4)',
+      overflow: 'rgba(168, 85, 247, 0.4)',
       shimmer: 'rgba(168, 85, 247, 0.3)',
     },
     'slate': {
       fill: 'rgba(148, 163, 184, 0.2)',
       indicator: '#94A3B8',
       stripe: 'rgba(148, 163, 184, 0.4)',
-      overdue: 'rgba(148, 163, 184, 0.4)',
+      overflow: 'rgba(148, 163, 184, 0.4)',
       shimmer: 'rgba(148, 163, 184, 0.3)',
     },
     'gray': {
       fill: 'rgba(156, 163, 175, 0.2)',
       indicator: '#9CA3AF',
       stripe: 'rgba(156, 163, 175, 0.4)',
-      overdue: 'rgba(156, 163, 175, 0.4)',
+      overflow: 'rgba(156, 163, 175, 0.4)',
       shimmer: 'rgba(156, 163, 175, 0.3)',
     },
   };
@@ -113,23 +116,40 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
     'statusLabel',
     'shimmer',
     'position',
+    'hidePercentage',
     'class',
   ]);
 
-  // ✅ Use accessors for reactivity with defaults
-  const progressVal = () => local.progress ?? 0;
+  // ✅ Use direct values with proper defaults and validation
+  const progressVal = createMemo(() => {
+    const value = local.progress;
+    // Ensure we always have a valid number
+    if (typeof value !== 'number' || isNaN(value)) {
+      return 0;
+    }
+    return Math.max(0, value); // Ensure non-negative
+  });
+
   const Icon = () => local.icon ?? null;
   const position = () => local.position ?? 'left';
   const shimmer = () => local.shimmer ?? false;
   const statusLabel = () => local.statusLabel;
   const label = () => local.label;
+  const hidePercentage = () => local.hidePercentage ?? false;
   const classProp = () => local.class;
 
-  // Calculate progress and overdue
+  // Calculate progress and overflow - ensure this always returns a valid object
   const progressInfo = createMemo(() => {
-    const p = Math.max(0, Math.min(100, progressVal()));
-    const overdue = Math.max(0, progressVal() - 100);
-    return { progress: p, overdue };
+    try {
+      const rawProgress = progressVal();
+      const p = Math.max(0, Math.min(100, rawProgress));
+      const overflow = Math.max(0, rawProgress - 100);
+      return { progress: p, overflow };
+    } catch (error) {
+      console.warn('Error calculating progress info:', error);
+      // Return safe defaults
+      return { progress: 0, overflow: 0 };
+    }
   });
 
   // Extract color info from class
@@ -151,7 +171,8 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
   // Progress fill style
   const progressStyle = createMemo(() => {
     const colors = colorInfo();
-    const { progress } = progressInfo();
+    const info = progressInfo();
+    const { progress } = info || { progress: 0 }; // Extra safety
     const isRight = position() === 'right';
 
     return {
@@ -165,17 +186,18 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
     };
   });
 
-  // Overdue section style
-  const overdueStyle = createMemo(() => {
+  // Overflow section style
+  const overflowStyle = createMemo(() => {
     const colors = colorInfo();
-    const { overdue } = progressInfo();
+    const info = progressInfo();
+    const { overflow } = info || { overflow: 0 }; // Extra safety
     const isRight = position() === 'right';
-    const visibleOverdue = Math.min(90, overdue); // cap visualization
+    const visibleOverflow = Math.min(90, overflow); // cap visualization
 
     if (isRight) {
       return {
-        width: `${visibleOverdue}%`,
-        'background-color': colors.overdue,
+        width: `${visibleOverflow}%`,
+        'background-color': colors.overflow,
         position: 'absolute',
         left: 0,
         top: 0,
@@ -183,10 +205,10 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
         'border-radius': '4px 0 0 4px',
       };
     } else {
-      const startPosition = Math.max(10, 100 - visibleOverdue);
+      const startPosition = Math.max(10, 100 - visibleOverflow);
       return {
-        width: `${visibleOverdue}%`,
-        'background-color': colors.overdue,
+        width: `${visibleOverflow}%`,
+        'background-color': colors.overflow,
         position: 'absolute',
         left: `${startPosition}%`,
         top: 0,
@@ -206,8 +228,8 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
     };
   });
 
-  // Overdue indicator line style
-  const overdueIndicatorStyle = createMemo(() => {
+  // Overflow indicator line style
+  const overflowIndicatorStyle = createMemo(() => {
     const colors = colorInfo();
     const isRight = position() === 'right';
     return {
@@ -234,7 +256,7 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
         style={progressStyle()}
       >
         {/* Shimmer effect */}
-        {shimmer() && progressInfo().overdue <= 0 && (
+        {shimmer() && (progressInfo()?.overflow || 0) <= 0 && (
           <div
             class={cn('absolute inset-0', styles['animate-shimmer'])}
             style={shimmerStyle()}
@@ -242,7 +264,7 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
         )}
 
         {/* Progress indicator line */}
-        {progressInfo().overdue <= 0 && (
+        {(progressInfo()?.overflow || 0) <= 0 && (
           <div
             class="absolute top-0 w-1 h-full ks-progress-indicator animate-pulse"
             style={indicatorStyle()}
@@ -250,15 +272,15 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
         )}
       </div>
 
-      {/* Overdue section */}
-      {progressInfo().overdue > 0 && (
+      {/* Overflow section */}
+      {(progressInfo()?.overflow || 0) > 0 && (
         <div
-          class={cn('transition-all duration-1000 relative animate-pulse', styles['ks-progress-overdue'])}
-          style={overdueStyle()}
+          class={cn('transition-all duration-1000 relative animate-pulse', styles['ks-progress-overflow'])}
+          style={overflowStyle()}
         >
           <div
             class="absolute top-0 w-1 h-full ks-progress-indicator animate-pulse"
-            style={overdueIndicatorStyle()}
+            style={overflowIndicatorStyle()}
           />
         </div>
       )}
@@ -291,11 +313,13 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
         </div>
 
         {/* Right side: percentage */}
-        <div class="flex-shrink-0 ml-2 text-right">
-          <span class="font-mono font-medium text-gray-400">
-            {Math.round(progressVal())}%
-          </span>
-        </div>
+        {!hidePercentage() && (
+          <div class="flex-shrink-0 ml-2 text-right">
+            <span class="font-mono font-medium text-gray-400">
+              {Math.round(progressVal())}%
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

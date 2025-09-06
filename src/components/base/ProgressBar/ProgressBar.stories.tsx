@@ -30,7 +30,7 @@ const meta: Meta<typeof ProgressBar> = {
     },
     docs: {
       description: {
-        component: 'Advanced HUD-style ProgressBar component. Shows progress with optional overdue section and shimmer effect. Supports bidirectional progress.',
+        component: 'Advanced HUD-style ProgressBar component. Shows progress with optional overflow section and shimmer effect. Supports bidirectional progress.',
       },
     },
   },
@@ -38,7 +38,7 @@ const meta: Meta<typeof ProgressBar> = {
   argTypes: {
     progress: {
       control: { type: 'range', min: 0, max: 500, step: 1 },
-      description: 'Required progress percentage (0-100 for normal, >100 for overdue)',
+      description: 'Required progress percentage (0-100 for normal, >100 for overflow)',
     },
     shimmer: {
       control: { type: 'boolean' },
@@ -48,6 +48,10 @@ const meta: Meta<typeof ProgressBar> = {
       control: { type: 'radio' },
       options: ['left', 'right'],
       description: 'Direction of progress fill',
+    },
+    hidePercentage: {
+      control: { type: 'boolean' },
+      description: 'Hide the percentage text display',
     },
     icon: {
       control: { type: 'select' },
@@ -138,47 +142,113 @@ export const WithAdditionalLabel: Story = {
   },
 };
 
-// === OVERDUE MODES ===
-export const OverdueProgress: Story = {
+// === OVERFLOW MODES ===
+export const OverflowProgress: Story = {
   args: {
     progress: 120,
-    statusLabel: 'Overdue',
+    statusLabel: 'Overflow',
     class: 'h-8 text-sm text-red-400 border-red-600/30 w-80',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Progress bar showing overdue status with secondary overdue section.',
+        story: 'Progress bar showing overflow status with secondary overflow section.',
       },
     },
   },
 };
 
-export const HighlyOverdue: Story = {
+export const HighlyOverflow: Story = {
   args: {
     progress: 180,
-    statusLabel: 'Highly Overdue',
+    statusLabel: 'Highly Overflow',
     class: 'h-8 text-sm text-red-400 border-red-600/30 w-80',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Progress bar showing significant overdue status with large excess percentage.',
+        story: 'Progress bar showing significant overflow status with large excess percentage.',
       },
     },
   },
 };
 
-export const MaximumOverdue: Story = {
+export const MaximumOverflow: Story = {
   args: {
     progress: 300,
-    statusLabel: 'Maximum Overdue',
+    statusLabel: 'Maximum Overflow',
     class: 'h-8 text-sm text-red-400 border-red-600/30 w-80',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Progress bar with extreme overdue - capped at 90% visualization to prevent container overflow.',
+        story: 'Progress bar with extreme overflow - capped at 90% visualization to prevent container overflow.',
+      },
+    },
+  },
+};
+
+// === HIDE PERCENTAGE MODES ===
+export const HiddenPercentage: Story = {
+  args: {
+    progress: 65,
+    statusLabel: 'Processing',
+    hidePercentage: true,
+    class: 'h-8 text-sm text-green-400 border-green-600/30 w-80',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Progress bar with hidden percentage display - shows only status label and progress fill.',
+      },
+    },
+  },
+};
+
+export const HiddenPercentageWithIcon: Story = {
+  args: {
+    progress: 42,
+    statusLabel: 'Downloading',
+    icon: Download,
+    hidePercentage: true,
+    class: 'h-8 text-sm text-blue-400 border-blue-600/30 w-80',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Progress bar with icon and hidden percentage - clean look for dashboard widgets.',
+      },
+    },
+  },
+};
+
+export const HiddenPercentageMinimal: Story = {
+  args: {
+    progress: 30,
+    icon: Activity,
+    hidePercentage: true,
+    class: 'h-6 text-xs text-purple-400 border-purple-600/30 w-48',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Minimal progress bar with only icon and progress fill - no text labels.',
+      },
+    },
+  },
+};
+
+export const HiddenPercentageOverflow: Story = {
+  args: {
+    progress: 135,
+    statusLabel: 'Overflow State',
+    hidePercentage: true,
+    class: 'h-8 text-sm text-red-400 border-red-600/30 w-80',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Overflow progress bar with hidden percentage - shows overflow visualization without numerical display.',
       },
     },
   },
@@ -218,6 +288,23 @@ export const ShimmerNoLabel: Story = {
   },
 };
 
+export const ShimmerHiddenPercentage: Story = {
+  args: {
+    progress: 60,
+    shimmer: true,
+    statusLabel: 'Syncing',
+    hidePercentage: true,
+    class: 'h-8 text-sm text-cyan-400 border-cyan-600/30 w-80',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Shimmer mode with hidden percentage - perfect for indeterminate progress states.',
+      },
+    },
+  },
+};
+
 // === POSITION VARIANTS ===
 export const RightPosition: Story = {
   args: {
@@ -235,17 +322,17 @@ export const RightPosition: Story = {
   },
 };
 
-export const RightPositionOverdue: Story = {
+export const RightPositionOverflow: Story = {
   args: {
     progress: 120,
     position: 'right',
-    statusLabel: 'Overdue',
+    statusLabel: 'Overflow',
     class: 'h-8 text-sm text-red-400 border-red-600/30 w-80',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Overdue progress bar filling from right to left.',
+        story: 'Overflow progress bar filling from right to left.',
       },
     },
   },
@@ -480,12 +567,13 @@ export const CompactWidget: Story = {
   args: {
     progress: 60,
     icon: Timer,
+    hidePercentage: true,
     class: 'h-4 text-xs text-green-400 border-green-600/30 w-32 rounded-full',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Ultra-compact widget for sidebar or status bar with rounded appearance.',
+        story: 'Ultra-compact widget for sidebar or status bar with rounded appearance and hidden percentage.',
       },
     },
   },
@@ -524,10 +612,10 @@ export const ModeComparison: Story = {
         class="h-8 text-sm text-blue-400 border-blue-600/30"
       />
       
-      <div class="text-gray-400 text-sm font-medium mt-6">Overdue Progress</div>
+      <div class="text-gray-400 text-sm font-medium mt-6">Overflow Progress</div>
       <ProgressBar
         progress={120}
-        statusLabel="Overdue"
+        statusLabel="Overflow"
         class="h-8 text-sm text-red-400 border-red-600/30"
       />
       
@@ -546,12 +634,20 @@ export const ModeComparison: Story = {
         statusLabel="Processing"
         class="h-8 text-sm text-amber-400 border-amber-600/30"
       />
+      
+      <div class="text-gray-400 text-sm font-medium mt-6">Hidden Percentage</div>
+      <ProgressBar
+        progress={80}
+        statusLabel="Processing"
+        hidePercentage={true}
+        class="h-8 text-sm text-cyan-400 border-cyan-600/30"
+      />
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story: 'Comparison showing all major modes: normal, overdue, shimmer, and position variants.',
+        story: 'Comparison showing all major modes: normal, overflow, shimmer, position variants, and hidden percentage.',
       },
     },
     controls: { disable: true }, // disables all controls for this story
@@ -627,6 +723,46 @@ export const SizeComparison: Story = {
     docs: {
       description: {
         story: 'Comparison of different sizes using Tailwind height and text size classes.',
+      },
+    },
+    controls: { disable: true }, // disables all controls for this story
+  },
+};
+
+export const PercentageDisplayComparison: Story = {
+  render: () => (
+    <div class="space-y-4 w-80">
+      <div class="text-gray-400 text-sm font-medium">With Percentage</div>
+      <ProgressBar
+        progress={65}
+        statusLabel="Standard Display"
+        class="h-8 text-sm text-green-400 border-green-600/30"
+      />
+      <ProgressBar
+        progress={120}
+        statusLabel="Overflow Display"
+        class="h-8 text-sm text-red-400 border-red-600/30"
+      />
+      
+      <div class="text-gray-400 text-sm font-medium mt-6">Hidden Percentage</div>
+      <ProgressBar
+        progress={65}
+        statusLabel="Clean Display"
+        hidePercentage={true}
+        class="h-8 text-sm text-green-400 border-green-600/30"
+      />
+      <ProgressBar
+        progress={120}
+        statusLabel="Overflow Hidden"
+        hidePercentage={true}
+        class="h-8 text-sm text-red-400 border-red-600/30"
+      />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Comparison between showing and hiding percentage display for both normal and overflow states.',
       },
     },
     controls: { disable: true }, // disables all controls for this story
