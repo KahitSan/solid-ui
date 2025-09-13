@@ -1,3 +1,4 @@
+// Button.tsx
 import { Component, JSX, splitProps, createSignal, onCleanup, createMemo, mergeProps, createEffect } from 'solid-js';
 import styles from './Button.module.css';
 
@@ -16,9 +17,8 @@ export interface ButtonProps extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonEle
   // Custom props for HUD functionality
   effect?: HUDEffect | HUDEffect[] | string;
   ripple?: boolean;
-  icon?: Component<{ size: number; class?: string }>;
+  icon?: Component<{ size?: number; class?: string }>;
   iconPosition?: 'left' | 'right';
-  iconSize?: number;
   
   // Override onClick to ensure proper typing
   onClick?: (event: MouseEvent) => void;
@@ -138,7 +138,6 @@ const Button: Component<ButtonProps> = (props) => {
   const defaultProps = {
     ripple: true,
     iconPosition: 'left' as const,
-    iconSize: 16,
   };
 
   const merged = mergeProps(defaultProps, props);
@@ -148,10 +147,10 @@ const Button: Component<ButtonProps> = (props) => {
     'ripple',
     'icon',
     'iconPosition',
-    'iconSize',
     'class',
     'children',
     'onClick',
+    'disabled', // Add disabled to local props
   ]);
 
   const [ripples, setRipples] = createSignal<
@@ -249,11 +248,12 @@ const Button: Component<ButtonProps> = (props) => {
       isIconOnly() && 'aspect-square !p-2', // Icon-only adjustments (using !p-2 to override padding)
       ...parsedEffects(), // Custom HUD effects
       blink() && styles['ks-btn-link-blink'], // Link blink effect (controlled by stories)
+      local.disabled && 'opacity-50 cursor-not-allowed' // Disabled state styling
     );
   });
 
   const handleMouseDown = (event: MouseEvent) => {
-    if (others.disabled) return;
+    if (local.disabled) return;
 
     // Ripple effect for buttons with ripple enabled
     if (hasRipple() && buttonRef) {
@@ -270,7 +270,7 @@ const Button: Component<ButtonProps> = (props) => {
   };
 
   const handleMouseUp = () => {
-    if (!hasRipple() || others.disabled) return;
+    if (!hasRipple() || local.disabled) return;
 
     const timeSinceMouseDown = Date.now() - mouseDownTime;
     const minExpandTime = 400; // ripple expand duration
@@ -289,25 +289,25 @@ const Button: Component<ButtonProps> = (props) => {
   };
 
   const handleMouseLeave = () => {
+    if (local.disabled) return;
     handleMouseUp();
   };
 
   const handleClick = (event: MouseEvent) => {
-    if (local.onClick && !others.disabled) {
+    if (local.onClick && !local.disabled) {
       local.onClick(event);
     }
   };
 
   const renderContent = createMemo(() => {
     const IconComponent = local.icon;
-    const iconSize = local.iconSize!;
 
     if (isIconOnly() && IconComponent) {
-      return <IconComponent size={iconSize} />;
+      return <IconComponent />;
     }
 
     if (IconComponent && local.children) {
-      const icon = <IconComponent size={iconSize} />;
+      const icon = <IconComponent />;
       const position = local.iconPosition;
 
       return position === 'left' ? (
@@ -324,7 +324,7 @@ const Button: Component<ButtonProps> = (props) => {
     }
 
     if (IconComponent) {
-      return <IconComponent size={iconSize} />;
+      return <IconComponent />;
     }
 
     return local.children;
@@ -349,6 +349,7 @@ const Button: Component<ButtonProps> = (props) => {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
+      disabled={local.disabled} // Pass disabled prop to button element
       {...others}
     >
       {renderContent()}
