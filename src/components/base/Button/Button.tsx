@@ -358,7 +358,6 @@ const Button: Component<ButtonProps> = (props) => {
       {hasRipple() &&
         ripples().map((ripple) => (
           <span
-            key={ripple.id}
             class={cn(
               styles['ks-btn-ripple-effect'],
               ripple.isFading && styles['ks-btn-ripple-fade']

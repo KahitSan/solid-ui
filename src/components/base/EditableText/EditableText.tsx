@@ -274,7 +274,6 @@ const EditableText: Component<EditableTextProps> = (props) => {
       <span 
         ref={contentRef}
         contentEditable={isEditing() && !isSaving()}
-        suppressContentEditableWarning={true}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
         onPaste={handlePaste}

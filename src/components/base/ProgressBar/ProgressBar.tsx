@@ -179,8 +179,8 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
       width: `${progress}%`,
       'background-color': colors.fill,
       ...(isRight && {
-        position: 'absolute',
-        right: 0,
+        position: 'absolute' as const,
+        right: '0px',
         'border-radius': '0 4px 4px 0',
       }),
     };
@@ -198,9 +198,9 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
       return {
         width: `${visibleOverflow}%`,
         'background-color': colors.overflow,
-        position: 'absolute',
-        left: 0,
-        top: 0,
+        position: 'absolute' as const,
+        left: '0px',
+        top: '0px',
         height: '100%',
         'border-radius': '4px 0 0 4px',
       };
@@ -209,9 +209,9 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
       return {
         width: `${visibleOverflow}%`,
         'background-color': colors.overflow,
-        position: 'absolute',
+        position: 'absolute' as const,
         left: `${startPosition}%`,
-        top: 0,
+        top: '0px',
         height: '100%',
         'border-radius': '0 4px 4px 0',
       };
@@ -224,7 +224,7 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
     const isRight = position() === 'right';
     return {
       'background-color': colors.indicator,
-      ...(isRight ? { left: 0 } : { right: 0 }),
+      ...(isRight ? { left: '0px' } : { right: '0px' }),
     };
   });
 
@@ -234,7 +234,7 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
     const isRight = position() === 'right';
     return {
       'background-color': colors.indicator,
-      ...(isRight ? { right: 0 } : { left: 0 }),
+      ...(isRight ? { right: '0px' } : { left: '0px' }),
     };
   });
 
@@ -291,11 +291,12 @@ const ProgressBar: Component<ProgressBarProps> = (props) => {
         <div class="flex items-center gap-2 min-w-0 flex-1">
           {(() => {
             const IconComponent = Icon();
-            return IconComponent ? <IconComponent size={iconSize()} style={textColor()} /> : null;
+            // Remove unsupported style prop, use class or color prop if needed
+            return IconComponent ? <IconComponent size={iconSize()} /> : null;
           })()}
 
           {statusLabel() && (
-            <span class="font-medium" style={textColor()}>
+            <span class="font-medium">
               {statusLabel()}
             </span>
           )}
