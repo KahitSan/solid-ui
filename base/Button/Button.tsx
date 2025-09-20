@@ -4,15 +4,15 @@ import { Dynamic } from 'solid-js/web';
 import styles from './Button.module.css';
 
 // Define button types and variants
-type ButtonType = 'primary' | 'danger' | 'secondary';
+type ButtonIntent = 'primary' | 'danger' | 'secondary';
 type ButtonVariant = 'clip1' | 'clip2' | 'ghost' | 'link';
 
 export interface ButtonProps {
   // Polymorphic component prop
   as?: any;
   
-  // Semantic styling props
-  type?: ButtonType;
+  // Semantic styling props (renamed from 'type' to 'intent')
+  intent?: ButtonIntent;
   variant?: ButtonVariant;
   
   // Effect toggles
@@ -29,6 +29,7 @@ export interface ButtonProps {
   class?: string;
   disabled?: boolean;
   children?: any;
+  type?: string; // HTML type attribute (submit, button, reset)
   
   // Event handlers
   onClick?: (event: MouseEvent) => void;
@@ -41,8 +42,8 @@ function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-// Define type configurations
-const buttonTypeConfig = {
+// Define type configurations (renamed from buttonTypeConfig)
+const buttonIntentConfig = {
   primary: {
     textColor: 'text-amber-400',
     background: 'bg-amber-600/20 border-amber-600/60',
@@ -110,7 +111,7 @@ const Button: Component<ButtonProps> = (props) => {
   // Default props
   const defaultProps = {
     as: 'button',
-    type: 'primary' as ButtonType,
+    intent: 'primary' as ButtonIntent, // Default intent
     variant: 'clip1' as ButtonVariant,
     noRipple: false,
     noScanline: false,
@@ -123,7 +124,7 @@ const Button: Component<ButtonProps> = (props) => {
   
   const [local, others] = splitProps(merged, [
     'as',
-    'type',
+    'intent', // Changed from 'type' to 'intent'
     'variant',
     'noRipple',
     'noScanline',
@@ -153,9 +154,9 @@ const Button: Component<ButtonProps> = (props) => {
   // Auto-detect icon-only mode when no children provided
   const isIconOnly = createMemo(() => !local.children && local.icon);
 
-  // Get type and variant configurations
-  const typeConfig = createMemo(() => buttonTypeConfig[local.type]);
-  const variantConfig = createMemo(() => buttonVariantConfig[local.variant]);
+  // Get intent and variant configurations
+  const intentConfig = createMemo(() => buttonIntentConfig[local.intent] || buttonIntentConfig.primary);
+  const variantConfig = createMemo(() => buttonVariantConfig[local.variant] || buttonVariantConfig.clip1);
 
   // Determine if ripple should be enabled
   const hasRipple = createMemo(() => {
@@ -203,9 +204,9 @@ const Button: Component<ButtonProps> = (props) => {
     }).filter(Boolean);
   });
 
-  // Dynamic CSS custom properties based on type colors
+  // Dynamic CSS custom properties based on intent colors
   const customProperties = createMemo(() => {
-    const colors = typeConfig().colors;
+    const colors = intentConfig().colors;
     return {
       '--ks-effect-color': colors.effect,
       '--ks-effect-bg': colors.effectBg,
@@ -226,18 +227,18 @@ const Button: Component<ButtonProps> = (props) => {
     // Core structural classes
     const coreClasses = 'select-none inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 focus:outline-none text-sm rounded';
     
-    // Text color from type (always applied)
-    const textColor = typeConfig().textColor;
+    // Text color from intent (always applied)
+    const textColor = intentConfig().textColor;
     
     // Background and hover classes (only if variant doesn't override)
-    const backgroundClasses = variantConfig().overrideType ? '' : `${typeConfig().background} ${typeConfig().hover}`;
+    const backgroundClasses = variantConfig().overrideType ? '' : `${intentConfig().background} ${intentConfig().hover}`;
     
     // Variant-based styling
     const variantClasses = variantConfig().baseClasses;
     
     return cn(
       coreClasses,
-      textColor, // Always include text color from type
+      textColor, // Always include text color from intent
       backgroundClasses, // Only include if variant allows
       variantClasses,
       local.class, // User's additional classes
