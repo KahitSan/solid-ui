@@ -1,159 +1,140 @@
 // Button.tsx
-import { splitProps, createSignal, onCleanup, createMemo, mergeProps } from 'solid-js';
+import { splitProps, createSignal, onCleanup, createMemo, mergeProps, Component } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import styles from './Button.module.css';
 
-// Define possible HUD effects as a type
-type HUDEffect =
-  | 'scanline'
-  | 'clip-top-left-bottom-right'
-  | 'clip-top-right-bottom-left'
-  | 'clip-minimal-top-left-bottom-right'
-  | 'clip-minimal-top-right-bottom-left'
-  | 'clip-inset-top-left-bottom-right'
-  | 'glow'
-  | 'pulse';
+// Define button types and variants
+type ButtonType = 'primary' | 'danger' | 'secondary';
+type ButtonVariant = 'clip1' | 'clip2' | 'ghost' | 'link';
 
-// @ts-ignore
-export interface ButtonProps extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
-  // Custom props for HUD functionality
-  effect?: HUDEffect | HUDEffect[] | string;
-  ripple?: boolean;
-  // @ts-ignore
+export interface ButtonProps {
+  // Polymorphic component prop
+  as?: any;
+  
+  // Semantic styling props
+  type?: ButtonType;
+  variant?: ButtonVariant;
+  
+  // Effect toggles
+  noRipple?: boolean;
+  noScanline?: boolean;
+  noGlow?: boolean;
+  noPulse?: boolean;
+  
+  // Icon props
   icon?: Component<{ size?: number; class?: string }>;
   iconPosition?: 'left' | 'right';
   
-  // Override onClick to ensure proper typing
+  // Standard HTML attributes
+  class?: string;
+  disabled?: boolean;
+  children?: any;
+  
+  // Event handlers
   onClick?: (event: MouseEvent) => void;
+  
+  // Allow any additional props for polymorphic usage
+  [key: string]: any;
 }
 
 function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-// Utility to extract color family from Tailwind classes
-function extractColorInfo(className: string) {
-  const colorMap = {
-    // Red family
-    'red': { 
-      r: 255, g: 68, b: 68,
-      ripple: 'rgba(255, 255, 255, 0.3)',
-      effect: 'rgba(255, 68, 68, 0.4)',
-      effectBg: 'rgba(255, 68, 68, 0.1)',
-      effectBorder: 'rgba(255, 68, 68, 0.4)',
-      effectGlow: 'rgba(255, 68, 68, 0.3)'
-    },
-    // Green family
-    'green': { 
-      r: 0, g: 204, b: 136,
-      ripple: 'rgba(255, 255, 255, 0.3)',
-      effect: 'rgba(0, 204, 136, 0.4)',
-      effectBg: 'rgba(0, 204, 136, 0.1)',
-      effectBorder: 'rgba(0, 204, 136, 0.4)',
-      effectGlow: 'rgba(0, 204, 136, 0.3)'
-    },
-    // Blue family
-    'blue': { 
-      r: 74, g: 158, b: 255,
-      ripple: 'rgba(255, 255, 255, 0.3)',
-      effect: 'rgba(74, 158, 255, 0.4)',
-      effectBg: 'rgba(74, 158, 255, 0.1)',
-      effectBorder: 'rgba(74, 158, 255, 0.4)',
-      effectGlow: 'rgba(74, 158, 255, 0.3)'
-    },
-    // Purple family
-    'purple': { 
-      r: 168, g: 85, b: 247,
-      ripple: 'rgba(255, 255, 255, 0.3)',
-      effect: 'rgba(168, 85, 247, 0.4)',
-      effectBg: 'rgba(168, 85, 247, 0.1)',
-      effectBorder: 'rgba(168, 85, 247, 0.4)',
-      effectGlow: 'rgba(168, 85, 247, 0.3)'
-    },
-    // Pink family
-    'pink': { 
-      r: 244, g: 114, b: 182,
-      ripple: 'rgba(255, 255, 255, 0.3)',
-      effect: 'rgba(244, 114, 182, 0.4)',
-      effectBg: 'rgba(244, 114, 182, 0.1)',
-      effectBorder: 'rgba(244, 114, 182, 0.4)',
-      effectGlow: 'rgba(244, 114, 182, 0.3)'
-    },
-    // Yellow family
-    'yellow': { 
-      r: 255, g: 220, b: 93,
-      ripple: 'rgba(0, 0, 0, 0.2)', // Dark ripple for light colors
-      effect: 'rgba(255, 220, 93, 0.4)',
-      effectBg: 'rgba(255, 220, 93, 0.1)',
-      effectBorder: 'rgba(255, 220, 93, 0.4)',
-      effectGlow: 'rgba(255, 220, 93, 0.3)'
-    },
-    // Amber family (default)
-    'amber': { 
-      r: 201, g: 169, b: 97,
+// Define type configurations
+const buttonTypeConfig = {
+  primary: {
+    textColor: 'text-amber-400',
+    background: 'bg-amber-600/20 border-amber-600/60',
+    hover: 'hover:bg-amber-600/30 hover:border-amber-500',
+    colors: {
       ripple: 'rgba(255, 255, 255, 0.3)',
       effect: 'rgba(201, 169, 97, 0.4)',
       effectBg: 'rgba(201, 169, 97, 0.1)',
       effectBorder: 'rgba(201, 169, 97, 0.4)',
       effectGlow: 'rgba(201, 169, 97, 0.3)'
-    },
-    // Orange family
-    'orange': { 
-      r: 255, g: 165, b: 0,
+    }
+  },
+  danger: {
+    textColor: 'text-red-400',
+    background: 'bg-red-600/20 border-red-600/60',
+    hover: 'hover:bg-red-600/30 hover:border-red-500',
+    colors: {
       ripple: 'rgba(255, 255, 255, 0.3)',
-      effect: 'rgba(255, 165, 0, 0.4)',
-      effectBg: 'rgba(255, 165, 0, 0.1)',
-      effectBorder: 'rgba(255, 165, 0, 0.4)',
-      effectGlow: 'rgba(255, 165, 0, 0.3)'
-    },
-    // Slate/Gray family
-    'slate': { 
-      r: 148, g: 163, b: 184,
+      effect: 'rgba(255, 68, 68, 0.4)',
+      effectBg: 'rgba(255, 68, 68, 0.1)',
+      effectBorder: 'rgba(255, 68, 68, 0.4)',
+      effectGlow: 'rgba(255, 68, 68, 0.3)'
+    }
+  },
+  secondary: {
+    textColor: 'text-slate-400',
+    background: 'bg-slate-600/20 border-slate-600/60',
+    hover: 'hover:bg-slate-600/30 hover:border-slate-500',
+    colors: {
       ripple: 'rgba(255, 255, 255, 0.3)',
       effect: 'rgba(148, 163, 184, 0.4)',
       effectBg: 'rgba(148, 163, 184, 0.1)',
       effectBorder: 'rgba(148, 163, 184, 0.4)',
       effectGlow: 'rgba(148, 163, 184, 0.3)'
-    },
-    'gray': { 
-      r: 156, g: 163, b: 175,
-      ripple: 'rgba(255, 255, 255, 0.3)',
-      effect: 'rgba(156, 163, 175, 0.4)',
-      effectBg: 'rgba(156, 163, 175, 0.1)',
-      effectBorder: 'rgba(156, 163, 175, 0.4)',
-      effectGlow: 'rgba(156, 163, 175, 0.3)'
-    }
-  };
-
-  // Look for color family in className
-  for (const [colorName, colorValues] of Object.entries(colorMap)) {
-    if (className.includes(colorName)) {
-      return colorValues;
     }
   }
+};
 
-  // Default to amber if no color found
-  return colorMap.amber;
-}
+// Define variant configurations
+const buttonVariantConfig = {
+  clip1: {
+    effects: ['clip-top-left-bottom-right'],
+    baseClasses: 'px-4 py-2 border',
+    overrideType: false // Use type-based styling
+  },
+  clip2: {
+    effects: ['clip-top-right-bottom-left'],
+    baseClasses: 'px-4 py-2 border',
+    overrideType: false // Use type-based styling
+  },
+  ghost: {
+    effects: [],
+    baseClasses: 'px-4 py-2 bg-transparent border-transparent hover:bg-current/10 hover:border-transparent',
+    overrideType: true // Override type styling for transparent background
+  },
+  link: {
+    effects: [],
+    baseClasses: 'px-0 py-0 bg-transparent border-transparent underline-offset-4 hover:underline hover:bg-transparent hover:border-transparent',
+    overrideType: true // Override type styling for transparent background
+  }
+};
 
 // @ts-ignore
 const Button: Component<ButtonProps> = (props) => {
   // Default props
   const defaultProps = {
-    ripple: true,
+    as: 'button',
+    type: 'primary' as ButtonType,
+    variant: 'clip1' as ButtonVariant,
+    noRipple: false,
+    noScanline: false,
+    noGlow: false,
+    noPulse: false,
     iconPosition: 'left' as const,
   };
 
   const merged = mergeProps(defaultProps, props);
   
   const [local, others] = splitProps(merged, [
-    'effect',
-    'ripple',
+    'as',
+    'type',
+    'variant',
+    'noRipple',
+    'noScanline',
+    'noGlow',
+    'noPulse',
     'icon',
     'iconPosition',
     'class',
     'children',
     'onClick',
-    'disabled', // Add disabled to local props
+    'disabled',
   ]);
 
   const [ripples, setRipples] = createSignal<
@@ -166,40 +147,48 @@ const Button: Component<ButtonProps> = (props) => {
     }>
   >([]);
 
-  let buttonRef: HTMLButtonElement | undefined;
+  let elementRef: HTMLElement | undefined;
   let mouseDownTime = 0;
 
   // Auto-detect icon-only mode when no children provided
   const isIconOnly = createMemo(() => !local.children && local.icon);
 
-  // Extract color information from Tailwind classes
-  const colorInfo = createMemo(() => {
-    return extractColorInfo(local.class || '');
-  });
+  // Get type and variant configurations
+  const typeConfig = createMemo(() => buttonTypeConfig[local.type]);
+  const variantConfig = createMemo(() => buttonVariantConfig[local.variant]);
 
-  // Default ripple to true, but disable for clip-inset effects
+  // Determine if ripple should be enabled
   const hasRipple = createMemo(() => {
-    if (local.ripple === false) return false;
-    
-    // Disable ripple for clip-inset effects as they interfere with the layout
-    const effects = Array.isArray(local.effect) 
-      ? local.effect 
-      : (local.effect || '').split(' ').map((e: any)=> e.trim()).filter(Boolean);
-    
-    if (effects.includes('clip-inset-top-left-bottom-right')) return false;
-    
+    if (local.noRipple) return false;
+    // Disable ripple for link variant as it doesn't make sense (like old implementation)
+    if (local.variant === 'link') return false;
     return true;
   });
 
-  // Parse effects once - handle array, single effect, or space-delimited string
-  const parsedEffects = createMemo(() => {
-    if (!local.effect) return [];
+  // Determine active effects
+  const activeEffects = createMemo(() => {
+    const effects: string[] = [...variantConfig().effects];
+    
+    // Add scanline by default unless disabled
+    if (!local.noScanline) {
+      effects.push('scanline');
+    }
+    
+    // Add other effects if not disabled
+    if (!local.noGlow) {
+      // Could add glow to certain variants if needed
+    }
+    
+    if (!local.noPulse) {
+      // Could add pulse to certain variants if needed
+    }
+    
+    return effects;
+  });
 
-    const effectsArray = Array.isArray(local.effect)
-      ? local.effect
-      : local.effect.split(' ').map((e: any) => e.trim()).filter(Boolean);
-
-    return effectsArray.map((effect: any) => {
+  // Map effects to CSS classes
+  const effectClasses = createMemo(() => {
+    return activeEffects().map((effect) => {
       const effectMap: Record<string, string> = {
         'scanline': styles['ks-hud-scan-line'],
         'clip-top-left-bottom-right': styles['ks-hud-clip-top-left-bottom-right'],
@@ -211,12 +200,12 @@ const Button: Component<ButtonProps> = (props) => {
         'pulse': styles['ks-hud-pulse'],
       };
       return effectMap[effect];
-    }).filter(Boolean) as string[];
+    }).filter(Boolean);
   });
 
-  // Dynamic CSS custom properties based on detected colors
+  // Dynamic CSS custom properties based on type colors
   const customProperties = createMemo(() => {
-    const colors = colorInfo();
+    const colors = typeConfig().colors;
     return {
       '--ks-effect-color': colors.effect,
       '--ks-effect-bg': colors.effectBg,
@@ -234,32 +223,39 @@ const Button: Component<ButtonProps> = (props) => {
   });
 
   const classes = createMemo(() => {
-    // Core structural classes that should never be overridden
-    const coreClasses = 'select-none inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 focus:outline-none';
+    // Core structural classes
+    const coreClasses = 'select-none inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 focus:outline-none text-sm rounded';
     
-    // Default styling classes as fallbacks (user classes will override these)
-    const defaultStyling = 'px-4 py-2 text-sm rounded bg-amber-600/20 border border-amber-600/60 text-amber-400 hover:bg-amber-600/30 hover:border-amber-500';
+    // Text color from type (always applied)
+    const textColor = typeConfig().textColor;
+    
+    // Background and hover classes (only if variant doesn't override)
+    const backgroundClasses = variantConfig().overrideType ? '' : `${typeConfig().background} ${typeConfig().hover}`;
+    
+    // Variant-based styling
+    const variantClasses = variantConfig().baseClasses;
     
     return cn(
-      coreClasses, // Always applied - core layout
-      defaultStyling, // Default styling as fallback
-      local.class, // User's classes override defaults where they conflict
-      hasRipple() && styles['ks-btn-ripple'], // Add ripple container if needed
-      !hasRipple() && styles['ks-interactive'], // Basic interaction for non-ripple buttons
-      isIconOnly() && 'aspect-square !p-2', // Icon-only adjustments (using !p-2 to override padding)
-      ...parsedEffects(), // Custom HUD effects
-      local.disabled && 'opacity-50 cursor-not-allowed' // Disabled state styling
+      coreClasses,
+      textColor, // Always include text color from type
+      backgroundClasses, // Only include if variant allows
+      variantClasses,
+      local.class, // User's additional classes
+      hasRipple() && styles['ks-btn-ripple'],
+      !hasRipple() && styles['ks-interactive'],
+      isIconOnly() && 'aspect-square !p-2',
+      ...effectClasses(),
+      local.disabled && 'opacity-50 cursor-not-allowed'
     );
   });
 
   const handleMouseDown = (event: MouseEvent) => {
     if (local.disabled) return;
 
-    // Ripple effect for buttons with ripple enabled
-    if (hasRipple() && buttonRef) {
+    if (hasRipple() && elementRef) {
       mouseDownTime = Date.now();
 
-      const rect = buttonRef.getBoundingClientRect();
+      const rect = elementRef.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       const size = Math.max(rect.width, rect.height) * 2;
@@ -273,18 +269,16 @@ const Button: Component<ButtonProps> = (props) => {
     if (!hasRipple() || local.disabled) return;
 
     const timeSinceMouseDown = Date.now() - mouseDownTime;
-    const minExpandTime = 400; // ripple expand duration
+    const minExpandTime = 400;
 
     const delayBeforeFade = Math.max(0, minExpandTime - timeSinceMouseDown);
 
     setTimeout(() => {
-      // Start fading ripples
       setRipples((prev) => prev.map((ripple) => ({ ...ripple, isFading: true })));
 
-      // After fade completes, cleanup
       setTimeout(() => {
-        setRipples([]); // cleanup ripples
-      }, 400); // matches ks-btn-ripple-fade animation duration
+        setRipples([]);
+      }, 400);
     }, delayBeforeFade);
   };
 
@@ -330,15 +324,15 @@ const Button: Component<ButtonProps> = (props) => {
     return local.children;
   });
 
-  // Cleanup
   onCleanup(() => {
     setRipples([]);
   });
 
   return (
-    <button
-      ref={(el) => {
-        buttonRef = el;
+    <Dynamic
+      component={local.as}
+      ref={(el: HTMLElement) => {
+        elementRef = el;
         if (typeof others.ref === 'function') {
           others.ref(el);
         }
@@ -349,12 +343,11 @@ const Button: Component<ButtonProps> = (props) => {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
-      disabled={local.disabled} // Pass disabled prop to button element
+      disabled={local.disabled}
       {...others}
     >
       {renderContent()}
 
-      {/* Render ripples for buttons with ripple enabled */}
       {hasRipple() &&
         ripples().map((ripple) => (
           <span
@@ -371,7 +364,7 @@ const Button: Component<ButtonProps> = (props) => {
             }}
           />
         ))}
-    </button>
+    </Dynamic>
   );
 };
 
