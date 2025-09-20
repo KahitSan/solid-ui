@@ -1,5 +1,5 @@
 // Button.tsx
-import { splitProps, createSignal, onCleanup, createMemo, mergeProps, Component } from 'solid-js';
+import { splitProps, createSignal, onCleanup, createMemo, mergeProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import styles from './Button.module.css';
 
@@ -22,7 +22,7 @@ export interface ButtonProps {
   noPulse?: boolean;
   
   // Icon props
-  icon?: Component<{ size?: number; class?: string }>;
+  icon?: (props: { size?: number; class?: string }) => any;
   iconPosition?: 'left' | 'right';
   
   // Standard HTML attributes
