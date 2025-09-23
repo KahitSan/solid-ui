@@ -19,16 +19,16 @@ type ComboBoxProps = {
   options?: Option[] | (() => Option[]);
   multiple?: boolean;
   placeholder?: string;
-  label?: string;
   disabled?: boolean;
   error?: string;
-  variant?: 'default' | 'display';   // kept for backward compatibility
+  variant?: 'default' | 'display';
   compact?: boolean;
   allowCustom?: boolean;
   className?: string;
   onChange?: (next: string | string[]) => void;
   onCustomCreate?: (name: string) => void;
   onFocus?: () => void;
+  onBlur?: () => void;
   ref?: (el: HTMLInputElement | undefined) => void;
 };
 
@@ -40,7 +40,6 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
     'options',
     'multiple',
     'placeholder',
-    'label',
     'disabled',
     'error',
     'variant',
@@ -50,6 +49,7 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
     'onChange',
     'onCustomCreate',
     'onFocus',
+    'onBlur',
     'ref',
   ]);
 
@@ -59,6 +59,11 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
   const [focusedIdx, setFocusedIdx] = createSignal(0);
   const [internalOpts, setInternalOpts] = createSignal<Option[]>([]);
 
+  /* 1. internal mirror when consumer does not provide value */
+  const [innerValue, setInnerValue] = createSignal<string | string[] | null>(
+    p.multiple ? [] : ''
+  );
+
   /* ---------- refs ---------- */
   let containerRef: HTMLDivElement | undefined;
   let inputRef: HTMLInputElement | undefined;
@@ -66,6 +71,8 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
   onMount(() => p.ref?.(inputRef));
 
   /* ---------- derived ---------- */
+  const currentValue = () => (props.value !== undefined ? props.value : innerValue());
+
   const opts = (): Option[] => {
     const ext = typeof p.options === 'function' ? p.options() : p.options ?? [];
     const slugs = new Set(ext.map((o) => o.slug));
@@ -73,7 +80,7 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
   };
 
   const selectedSlugs = (): string[] => {
-    const v = p.value;
+    const v = currentValue();
     return (p.multiple ? (Array.isArray(v) ? v : []) : v ? [v] : []) as string[];
   };
 
@@ -99,42 +106,46 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
       setInternalOpts((prev) => (prev.some((i) => i.slug === o.name) ? prev : [...prev, newOpt]));
       p.onCustomCreate?.(o.name);
       if (p.multiple) {
-        p.onChange?.([...selectedSlugs(), o.name]);
+        const next = [...selectedSlugs(), o.name];
+        p.onChange?.(next);
+        if (props.value === undefined) setInnerValue(next);
         setInputValue('');
         setIsOpen(true);
         setTimeout(() => {
           inputRef?.focus();
-          if (inputRef)
-            inputRef.value = '';
+          if (inputRef) inputRef.value = '';
         }, 0);
-
       } else {
-        p.onChange?.(o.name);
+        const next = o.name;
+        p.onChange?.(next);
+        if (props.value === undefined) setInnerValue(next);
         setInputValue(o.name);
         setIsOpen(false);
+        if (inputRef) inputRef.value = '';
       }
-
       return;
     }
 
     if (p.multiple) {
       const s = selectedSet();
       if (s.has(o.slug)) s.delete(o.slug); else s.add(o.slug);
-      p.onChange?.(Array.from(s));
+      const next = Array.from(s);
+      p.onChange?.(next);
+      if (props.value === undefined) setInnerValue(next);
       setInputValue('');
       setIsOpen(true);
       setTimeout(() => {
         inputRef?.focus();
-        if (inputRef)
-          inputRef.value = ''; // empty the value
+        if (inputRef) inputRef.value = '';
       }, 0);
     } else {
-      p.onChange?.(o.slug);
+      const next = o.slug;
+      p.onChange?.(next);
+      if (props.value === undefined) setInnerValue(next);
       setInputValue(opts().find((x) => x.slug === o.slug)?.name ?? o.slug);
       setIsOpen(false);
+      if (inputRef) inputRef.value = '';
     }
-
-
   };
 
   /* ---------- keyboard ---------- */
@@ -142,10 +153,13 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
     if (p.disabled) return;
     if (e.key === 'Escape') {
       setIsOpen(false);
-      if (!p.multiple && p.value) {
-        const sel = opts().find((o) => o.slug === p.value);
-        setInputValue(sel ? sel.name : (p.value as string));
+      if (!p.multiple && currentValue()) {
+        const sel = opts().find((o) => o.slug === currentValue());
+        setInputValue(sel ? sel.name : (currentValue() as string));
       }
+
+      if (inputRef) inputRef.value = '';
+      
       return;
     }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -157,8 +171,19 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
       const opt = displayOptions()[focusedIdx()];
       if (opt) handleSelect(opt);
     }
-    if (e.key === 'Backspace' && inputValue() === '' && !p.multiple && selectedSlugs().length) {
-      p.onChange?.('');
+    if (e.key === 'Backspace' && inputValue() === '') {
+      if (!p.multiple && selectedSlugs().length) {
+        // Single-select: clear selection
+        const next = '';
+        p.onChange?.(next);
+        if (props.value === undefined) setInnerValue(next);
+      } else if (p.multiple && selectedSlugs().length) {
+        // Multi-select: remove last item
+        const current = selectedSlugs();
+        const next = current.slice(0, -1); // remove last item
+        p.onChange?.(next);
+        if (props.value === undefined) setInnerValue(next);
+      }
     }
   };
 
@@ -166,14 +191,15 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
     if (p.disabled) return;
     p.onFocus?.();
     setIsOpen(true);
-    if (!p.multiple && p.value) setInputValue('');
+    if (!p.multiple && currentValue()) setInputValue('');
   };
 
   /* ---------- sync input for single ---------- */
   createEffect(() => {
-    if (!p.multiple && p.value && !isOpen()) {
-      const sel = opts().find((o) => o.slug === p.value);
-      setInputValue(sel ? sel.name : (typeof p.value === 'string' ? p.value : ''));
+    if (!p.multiple && currentValue() && !isOpen()) {
+      const v = currentValue() as string;
+      const sel = opts().find((o) => o.slug === v);
+      setInputValue(sel ? sel.name : v);
     }
   });
 
@@ -187,10 +213,12 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
         (!portal || !portal.contains(e.target as Node))
       ) {
         setIsOpen(false);
-        if (!p.multiple && p.value) {
-          const sel = opts().find((o) => o.slug === p.value);
-          setInputValue(sel ? sel.name : (typeof p.value === 'string' ? p.value : ''));
+        if (!p.multiple && currentValue()) {
+          const sel = opts().find((o) => o.slug === currentValue());
+          setInputValue(sel ? sel.name : (currentValue() as string));
         }
+        if (inputRef) inputRef.value = '';
+        p.onBlur?.(); // Trigger the onBlur callback
       }
     };
     document.addEventListener('mousedown', handler);
@@ -266,9 +294,6 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
   /* ---------- single JSX tree ---------- */
   return (
     <div class={`relative ${p.className || ''}`} ref={containerRef}>
-      {!p.compact && p.label && (
-        <label class="block text-sm text-zinc-300 mb-1">{p.label}</label>
-      )}
       <div
         class={`flex flex-wrap items-center gap-1 w-full text-sm rounded-md border px-3 py-2 transition-colors bg-zinc-800/50 relative
         ${p.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-zinc-500'}
@@ -328,7 +353,9 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              p.multiple ? p.onChange?.([]) : p.onChange?.('');
+              const next = p.multiple ? [] : '';
+              p.onChange?.(next);
+              if (props.value === undefined) setInnerValue(next);
               setIsOpen(false);
             }}
             class="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 flex-shrink-0 z-10"
