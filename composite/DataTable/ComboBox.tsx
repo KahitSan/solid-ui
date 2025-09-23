@@ -20,7 +20,6 @@ type ComboBoxProps = {
   multiple?: boolean;
   placeholder?: string;
   disabled?: boolean;
-  error?: string;
   variant?: 'default' | 'display';
   compact?: boolean;
   allowCustom?: boolean;
@@ -41,7 +40,6 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
     'multiple',
     'placeholder',
     'disabled',
-    'error',
     'variant',
     'compact',
     'allowCustom',
@@ -297,7 +295,6 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
       <div
         class={`flex flex-wrap items-center gap-1 w-full text-sm rounded-md border px-3 py-2 transition-colors bg-zinc-800/50 relative
         ${p.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-zinc-500'}
-        ${p.error ? 'border-red-500' : 'border-zinc-700'}`}
         onClick={() => !p.disabled && inputRef?.focus()}
         style={{ paddingRight: selectedSlugs().length > 0 && !p.disabled ? '32px' : undefined }}
       >
@@ -364,9 +361,6 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
           </button>
         )}
       </div>
-      {p.error && !p.compact && (
-        <p class="mt-1 text-xs text-red-400">{p.error}</p>
-      )}
     </div>
   );
 }
