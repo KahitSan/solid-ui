@@ -293,8 +293,12 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
   return (
     <div class={`relative ${p.className || ''}`} ref={containerRef}>
       <div
-        class={`flex flex-wrap items-center gap-1 w-full text-sm rounded-md border px-3 py-2 transition-colors bg-zinc-800/50 relative
-        ${p.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-zinc-500'}
+        class={`flex flex-wrap items-center gap-1 w-full text-sm px-3 py-2 relative`}
+        classList={{
+          "border hover:border-zinc-500 transition-colors bg-zinc-800/50 rounded-md": !p.compact,
+          "border-none": p.compact,
+          "opacity-50 cursor-not-allowed": p.disabled
+        }}
         onClick={() => !p.disabled && inputRef?.focus()}
         style={{ paddingRight: selectedSlugs().length > 0 && !p.disabled ? '32px' : undefined }}
       >
