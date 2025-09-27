@@ -15,7 +15,7 @@ interface DataTableRow {
 
 // Refined column definition with generic type
 interface DataTableColumn<T extends DataTableRow> {
-  data: keyof T & string;
+  data: keyof T & string | null;
   title?: string;
   render?: (data: T[keyof T], type: 'display', row: T, meta: { row: number; col: number }) => JSX.Element | string;
   orderable?: boolean;
@@ -51,29 +51,31 @@ interface DataTableProps<T extends DataTableRow> {
   columns?: DataTableColumn<T>[];
   columnDefs?: DataTableColumnDef<T>[];
   data?: T[];
-  
+
   searching?: boolean;
   ordering?: boolean;
   paging?: boolean;
   info?: boolean;
-  
+
   serverSide?: boolean;
-  
+
   pageLength?: number;
   lengthMenu?: [number[], (number | string)[]];
-  
+
   headerButtons?: DataTableHeaderButton[];
   class?: string;
 }
 
-// Server-side parameters interface
+// DataTable.net standard server-side parameters interface
 interface ServerSideParams {
   draw: number;
   start: number;
   length: number;
   'search[value]': string;
   'search[regex]': boolean;
-  [key: string]: any; // For columns and order
+  'order[0][column]'?: number;
+  'order[0][dir]'?: string;
+  [key: string]: any;
 }
 
 export default function DataTable<T extends DataTableRow>(props: DataTableProps<T>) {
@@ -96,34 +98,34 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
   const [searchTerm, setSearchTerm] = createSignal('');
   const [currentPage, setCurrentPage] = createSignal(1);
   const [itemsPerPage, setItemsPerPage] = createSignal(pageLength());
-  const [sortConfig, setSortConfig] = createSignal<{ key: keyof T & string | null; direction: 'asc' | 'desc' }>({ 
-    key: null, 
-    direction: 'asc' 
+  const [sortConfig, setSortConfig] = createSignal<{ key: keyof T & string | null; direction: 'asc' | 'desc' }>({
+    key: null,
+    direction: 'asc'
   });
   const [tableData, setTableData] = createSignal<T[]>([]);
   const [loading, setLoading] = createSignal(false);
   const [drawCounter, setDrawCounter] = createSignal(1);
-  
+
   const [recordsTotal, setRecordsTotal] = createSignal(0);
   const [recordsFiltered, setRecordsFiltered] = createSignal(0);
 
   const effectiveColumns = createMemo(() => {
     if (columns().length > 0) return columns();
-    
+
     const dataArray = tableData();
     if (dataArray.length === 0) return [];
-    
+
     const firstRow = dataArray[0];
     return Object.keys(firstRow).map(key => ({ data: key as keyof T & string }));
   });
 
   const finalColumns = createMemo(() => {
     let result: DataTableColumn<T>[] = [...effectiveColumns()];
-    
+
     columnDefs().forEach(def => {
       const { targets, ...defOptions } = def;
       let columnIndexes: number[] = [];
-      
+
       if (Array.isArray(targets)) {
         columnIndexes = targets;
       } else if (targets === '_all') {
@@ -131,21 +133,22 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
       } else if (typeof targets === 'number') {
         columnIndexes = [targets];
       }
-      
+
       columnIndexes.forEach(index => {
         if (result[index]) {
           result[index] = { ...result[index], ...defOptions };
         }
       });
     });
-    
+
     return result;
   });
 
   const buildServerSideParams = (): ServerSideParams => {
     const cols = finalColumns();
     const sort = sortConfig();
-    
+
+    // Standard DataTable.net server-side parameters
     const params: ServerSideParams = {
       draw: drawCounter(),
       start: (currentPage() - 1) * itemsPerPage(),
@@ -154,6 +157,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
       'search[regex]': false
     };
 
+    // Add column information for proper DataTable.net compatibility
     cols.forEach((column, index) => {
       params[`columns[${index}][data]`] = column.data || index.toString();
       params[`columns[${index}][name]`] = column.data || '';
@@ -163,6 +167,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
       params[`columns[${index}][search][regex]`] = false;
     });
 
+    // Add ordering if we have a sort configuration
     if (sort.key) {
       const columnIndex = cols.findIndex(col => col.data === sort.key);
       if (columnIndex !== -1) {
@@ -178,7 +183,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
     const ajaxConfig = ajax();
     if (ajaxConfig) {
       setLoading(true);
-      
+
       const loadData = async () => {
         try {
           const url = typeof ajaxConfig === 'string' ? ajaxConfig : ajaxConfig.url;
@@ -191,19 +196,27 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
             const params = buildServerSideParams();
             const urlParams = new URLSearchParams();
             Object.entries(params).forEach(([key, value]) => {
-              urlParams.append(key, String(value));
+              if (value !== undefined && value !== null) {
+                urlParams.append(key, String(value));
+              }
             });
             requestUrl = `${url}?${urlParams.toString()}`;
           }
 
+          console.log('DataTable request URL:', requestUrl);
+
           const response = await fetch(requestUrl, requestOptions);
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('DataTable fetch error:', response.status, response.statusText, errorText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
           const result = await response.json();
-          
+
           if (serverSide()) {
             if (result.draw && result.draw !== drawCounter()) return;
-            
+
             setRecordsTotal(result.recordsTotal || 0);
             setRecordsFiltered(result.recordsFiltered || 0);
             setTableData(result.data || []);
@@ -214,16 +227,16 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
             } else if (result.data) {
               processedData = result.data;
             }
-            
+
             if (typeof ajaxConfig === 'object' && typeof ajaxConfig.dataSrc === 'function') {
               processedData = ajaxConfig.dataSrc(result);
             }
-            
+
             setTableData(processedData);
             setRecordsTotal(processedData.length);
             setRecordsFiltered(processedData.length);
           }
-          
+
         } catch (error) {
           console.error('DataTable: Failed to load AJAX data:', error);
           setTableData([]);
@@ -233,7 +246,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
           setLoading(false);
         }
       };
-      
+
       loadData();
     } else if (data().length > 0) {
       setTableData(data());
@@ -254,9 +267,9 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
 
   const filteredData = createMemo(() => {
     if (serverSide() || !searching() || !searchTerm()) return tableData();
-    
+
     return tableData().filter(row =>
-      Object.values(row).some(value => 
+      Object.values(row).some(value =>
         String(value).toLowerCase().includes(searchTerm().toLowerCase())
       )
     );
@@ -264,14 +277,14 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
 
   const sortedData = createMemo(() => {
     if (serverSide()) return filteredData();
-    
+
     const config = sortConfig();
     if (!ordering() || !config.key) return filteredData();
-    
+
     return [...filteredData()].sort((a, b) => {
       const aVal = a[config.key!];
       const bVal = b[config.key!];
-      
+
       if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
       if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
       return 0;
@@ -280,7 +293,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
 
   const paginatedData = createMemo(() => {
     if (serverSide() || !paging()) return sortedData();
-    
+
     const startIndex = (currentPage() - 1) * itemsPerPage();
     return sortedData().slice(startIndex, startIndex + itemsPerPage());
   });
@@ -295,12 +308,12 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
 
   const handleSort = (columnKey: keyof T & string) => {
     if (!ordering()) return;
-    
+
     setSortConfig(prev => ({
       key: columnKey,
       direction: (prev.key === columnKey && prev.direction === 'asc' ? 'desc' : 'asc')
     }));
-    
+
     if (serverSide()) setCurrentPage(1);
   };
 
@@ -316,9 +329,10 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
 
   const renderCell = (column: DataTableColumn<T>, row: T, rowIndex: number): JSX.Element | string => {
     if (column.render) {
-      return column.render(row[column.data], 'display', row, { row: rowIndex, col: finalColumns().indexOf(column) });
+      const columnData = column.data ? row[column.data] : null;
+      return column.render(columnData, 'display', row, { row: rowIndex, col: finalColumns().indexOf(column) });
     }
-    return String(row[column.data] || '');
+    return String(column.data ? row[column.data] || '' : '');
   };
 
   const getColumnHeader = (column: DataTableColumn<T>) => {
@@ -327,15 +341,23 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
     return 'Column';
   };
 
-  const isColumnSortable = (column: DataTableColumn<T>) => ordering() && column.orderable !== false;
+  const isColumnSortable = (column: DataTableColumn<T>) => ordering() && column.orderable !== false && column.data !== null;
 
   const getSortIcon = (column: DataTableColumn<T>) => {
     const config = sortConfig();
     if (!isColumnSortable(column) || config.key !== column.data) return null;
-    
-    return config.direction === 'asc' ? 
-      <ChevronUp size={14} class="text-amber-400 ml-1" /> : 
+
+    return config.direction === 'asc' ?
+      <ChevronUp size={14} class="text-amber-400 ml-1" /> :
       <ChevronDown size={14} class="text-amber-400 ml-1" />;
+  };
+
+  // Get row class from row data if available
+  const getRowClass = (row: T) => {
+    if ((row as any)._rowClass) {
+      return (row as any)._rowClass;
+    }
+    return 'border-b border-zinc-800/30 hover:bg-zinc-800/20 transition-colors';
   };
 
   return (
@@ -361,7 +383,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
                     placeholder="Search..."
                     value={searchTerm()}
                     onInput={(e) => handleSearchChange(e.currentTarget.value)}
-                    class="pl-10 pr-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 w-48"
+                    class="pl-10 pr-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 w-64"
                   />
                 </div>
               </Show>
@@ -391,10 +413,9 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
               <For each={finalColumns()}>
                 {(column) => (
                   <th
-                    class={`p-3 text-left text-sm font-medium text-zinc-300 transition-colors ${
-                      isColumnSortable(column) ? 'cursor-pointer hover:text-white' : ''
-                    } ${column.className || ''}`}
-                    onClick={() => isColumnSortable(column) && handleSort(column.data)}
+                    class={`p-4 text-left text-sm font-medium text-zinc-300 transition-colors ${isColumnSortable(column) ? 'cursor-pointer hover:text-white' : ''
+                      } ${column.className || ''}`}
+                    onClick={() => isColumnSortable(column) && column.data && handleSort(column.data)}
                   >
                     <div class="flex items-center">
                       <span>{getColumnHeader(column)}</span>
@@ -405,20 +426,30 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
               </For>
             </tr>
           </thead>
-          
+
           <tbody>
             <Show when={loading()}>
-              <tr>
-                <td colSpan={finalColumns().length} class="p-8 text-center">
-                  <div class="text-zinc-400">Loading...</div>
-                </td>
-              </tr>
+              <For each={[...Array(itemsPerPage())]}>
+                {() => (
+                  <tr class="border-b border-zinc-800/30">
+                    <For each={finalColumns()}>
+                      {() => (
+                        <td class="p-3">
+                          <div class="animate-pulse bg-zinc-700/50 rounded-md w-full h-6" />
+                        </td>
+                      )}
+                    </For>
+                  </tr>
+                )}
+              </For>
             </Show>
-            
+
             <Show when={!loading() && paginatedData().length === 0}>
               <tr>
-                <td colSpan={finalColumns().length} class="p-8 text-center">
-                  <div class="text-zinc-400">No data available in table</div>
+                <td colSpan={finalColumns().length} class="p-12 text-center">
+                  <div class="text-zinc-400">
+                    {searchTerm() ? 'No data found matching your search.' : 'No data available.'}
+                  </div>
                 </td>
               </tr>
             </Show>
@@ -426,10 +457,10 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
             <Show when={!loading() && paginatedData().length > 0}>
               <For each={paginatedData()}>
                 {(row, rowIndex) => (
-                  <tr class="border-b border-zinc-800/30 hover:bg-zinc-800/20 transition-colors">
+                  <tr class={getRowClass(row)}>
                     <For each={finalColumns()}>
                       {(column) => (
-                        <td class={`p-3 ${column.className || ''}`}>
+                        <td class={`p-4 ${column.className || ''}`}>
                           <div class="text-sm text-white">
                             {renderCell(column, row, rowIndex())}
                           </div>
@@ -458,7 +489,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
                   </Show>
                 </span>
               </Show>
-              
+
               <Show when={paging()}>
                 <select
                   value={itemsPerPage()}
