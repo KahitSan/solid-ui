@@ -64,6 +64,7 @@ interface DataTableProps<T extends DataTableRow> {
 
   headerButtons?: DataTableHeaderButton[];
   class?: string;
+  debounceDelay?: number; // Debounce delay in milliseconds (default: 300ms)
 }
 
 // DataTable.net standard server-side parameters interface
@@ -93,6 +94,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
   const lengthMenu = () => props.lengthMenu ?? [[10, 25, 50, 100], [10, 25, 50, 100]];
   const headerButtons = () => props.headerButtons || [];
   const className = () => props.class || '';
+  const debounceDelay = () => props.debounceDelay ?? 300;
 
   // State with explicit types
   const [searchTerm, setSearchTerm] = createSignal('');
@@ -105,6 +107,8 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
   const [tableData, setTableData] = createSignal<T[]>([]);
   const [loading, setLoading] = createSignal(false);
   const [drawCounter, setDrawCounter] = createSignal(1);
+  const [hasUserInteracted, setHasUserInteracted] = createSignal(false);
+  const [isDebouncing, setIsDebouncing] = createSignal(false);
 
   const [recordsTotal, setRecordsTotal] = createSignal(0);
   const [recordsFiltered, setRecordsFiltered] = createSignal(0);
@@ -179,75 +183,80 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
     return params;
   };
 
-  createEffect(() => {
+  // Function to make the actual HTTP request
+  const makeRequest = async () => {
     const ajaxConfig = ajax();
-    if (ajaxConfig) {
-      setLoading(true);
+    if (!ajaxConfig) return;
 
-      const loadData = async () => {
-        try {
-          const url = typeof ajaxConfig === 'string' ? ajaxConfig : ajaxConfig.url;
-          if (!url) return;
+    setLoading(true);
+    setIsDebouncing(false);
 
-          let requestUrl = url;
-          let requestOptions: RequestInit = { method: 'GET', headers: { 'Content-Type': 'application/json' } };
+    try {
+      const url = typeof ajaxConfig === 'string' ? ajaxConfig : ajaxConfig.url;
+      if (!url) return;
 
-          if (serverSide()) {
-            const params = buildServerSideParams();
-            const urlParams = new URLSearchParams();
-            Object.entries(params).forEach(([key, value]) => {
-              if (value !== undefined && value !== null) {
-                urlParams.append(key, String(value));
-              }
-            });
-            requestUrl = `${url}?${urlParams.toString()}`;
+      let requestUrl = url;
+      let requestOptions: RequestInit = { method: 'GET', headers: { 'Content-Type': 'application/json' } };
+
+      if (serverSide()) {
+        const params = buildServerSideParams();
+        const urlParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            urlParams.append(key, String(value));
           }
+        });
+        requestUrl = `${url}?${urlParams.toString()}`;
+      }
 
-          console.log('DataTable request URL:', requestUrl);
+      console.log('DataTable request URL:', requestUrl);
 
-          const response = await fetch(requestUrl, requestOptions);
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('DataTable fetch error:', response.status, response.statusText, errorText);
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+      const response = await fetch(requestUrl, requestOptions);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('DataTable fetch error:', response.status, response.statusText, errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-          const result = await response.json();
+      const result = await response.json();
 
-          if (serverSide()) {
-            if (result.draw && result.draw !== drawCounter()) return;
+      if (serverSide()) {
+        if (result.draw && result.draw !== drawCounter()) return;
 
-            setRecordsTotal(result.recordsTotal || 0);
-            setRecordsFiltered(result.recordsFiltered || 0);
-            setTableData(result.data || []);
-          } else {
-            let processedData: T[] = [];
-            if (Array.isArray(result)) {
-              processedData = result;
-            } else if (result.data) {
-              processedData = result.data;
-            }
-
-            if (typeof ajaxConfig === 'object' && typeof ajaxConfig.dataSrc === 'function') {
-              processedData = ajaxConfig.dataSrc(result);
-            }
-
-            setTableData(processedData);
-            setRecordsTotal(processedData.length);
-            setRecordsFiltered(processedData.length);
-          }
-
-        } catch (error) {
-          console.error('DataTable: Failed to load AJAX data:', error);
-          setTableData([]);
-          setRecordsTotal(0);
-          setRecordsFiltered(0);
-        } finally {
-          setLoading(false);
+        setRecordsTotal(result.recordsTotal || 0);
+        setRecordsFiltered(result.recordsFiltered || 0);
+        setTableData(result.data || []);
+      } else {
+        let processedData: T[] = [];
+        if (Array.isArray(result)) {
+          processedData = result;
+        } else if (result.data) {
+          processedData = result.data;
         }
-      };
 
-      loadData();
+        if (typeof ajaxConfig === 'object' && typeof ajaxConfig.dataSrc === 'function') {
+          processedData = ajaxConfig.dataSrc(result);
+        }
+
+        setTableData(processedData);
+        setRecordsTotal(processedData.length);
+        setRecordsFiltered(processedData.length);
+      }
+
+    } catch (error) {
+      console.error('DataTable: Failed to load AJAX data:', error);
+      setTableData([]);
+      setRecordsTotal(0);
+      setRecordsFiltered(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load effect - only runs once on mount
+  createEffect(() => {
+    if (ajax() && !hasUserInteracted()) {
+      makeRequest();
     } else if (data().length > 0) {
       setTableData(data());
       setRecordsTotal(data().length);
@@ -255,14 +264,36 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
     }
   });
 
+  // Separate effect for tracking user interactions and triggering debounced requests
+  let debounceTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  
   createEffect(() => {
-    if (serverSide() && ajax()) {
-      searchTerm();
-      currentPage();
-      itemsPerPage();
-      sortConfig();
-      setDrawCounter(prev => prev + 1);
+    if (!serverSide() || !ajax() || !hasUserInteracted()) return;
+
+    // Clear any existing timeout
+    if (debounceTimeoutId !== null) {
+      clearTimeout(debounceTimeoutId);
     }
+
+    // Show debouncing state
+    setIsDebouncing(true);
+
+    // Set a new timeout
+    debounceTimeoutId = setTimeout(() => {
+      setDrawCounter(prev => prev + 1);
+      makeRequest();
+      debounceTimeoutId = null;
+    }, debounceDelay());
+  });
+
+  // Cleanup effect - clear any pending timers when component unmounts
+  createEffect(() => {
+    return () => {
+      if (debounceTimeoutId !== null) {
+        clearTimeout(debounceTimeoutId);
+        debounceTimeoutId = null;
+      }
+    };
   });
 
   const filteredData = createMemo(() => {
@@ -309,22 +340,39 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
   const handleSort = (columnKey: keyof T & string) => {
     if (!ordering()) return;
 
+    setHasUserInteracted(true);
     setSortConfig(prev => ({
       key: columnKey,
       direction: (prev.key === columnKey && prev.direction === 'asc' ? 'desc' : 'asc')
     }));
 
-    if (serverSide()) setCurrentPage(1);
+    if (serverSide()) {
+      setCurrentPage(1);
+      // The debounced effect will handle the request
+    }
   };
 
-  const handlePageChange = (newPage: number) => setCurrentPage(newPage);
+  const handlePageChange = (newPage: number) => {
+    setHasUserInteracted(true);
+    setCurrentPage(newPage);
+    // The debounced effect will handle the request for server-side
+  };
+  
   const handlePageSizeChange = (newSize: number) => {
+    setHasUserInteracted(true);
     setItemsPerPage(newSize);
     setCurrentPage(1);
+    // The debounced effect will handle the request for server-side
   };
+  
   const handleSearchChange = (value: string) => {
+    setHasUserInteracted(true);
     setSearchTerm(value);
-    if (serverSide()) setCurrentPage(1);
+    
+    if (serverSide()) {
+      setCurrentPage(1);
+      // The debounced effect will handle the request
+    }
   };
 
   const renderCell = (column: DataTableColumn<T>, row: T, rowIndex: number): JSX.Element | string => {
@@ -428,7 +476,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
           </thead>
 
           <tbody>
-            <Show when={loading()}>
+            <Show when={loading() || isDebouncing()}>
               <For each={[...Array(itemsPerPage())]}>
                 {() => (
                   <tr class="border-b border-zinc-800/30">
@@ -444,7 +492,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
               </For>
             </Show>
 
-            <Show when={!loading() && paginatedData().length === 0}>
+            <Show when={!loading() && !isDebouncing() && paginatedData().length === 0}>
               <tr>
                 <td colSpan={finalColumns().length} class="p-12 text-center">
                   <div class="text-zinc-400">
@@ -454,7 +502,7 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
               </tr>
             </Show>
 
-            <Show when={!loading() && paginatedData().length > 0}>
+            <Show when={!loading() && !isDebouncing() && paginatedData().length > 0}>
               <For each={paginatedData()}>
                 {(row, rowIndex) => (
                   <tr class={getRowClass(row)}>
