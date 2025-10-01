@@ -34,7 +34,7 @@ type ComboBoxProps = {
 /* ----------------- component ----------------- */
 export default function ComboBox(props: ComboBoxProps): JSX.Element {
   /* ---------- props ---------- */
-  const [p, rest] = splitProps(props, [
+  const [p] = splitProps(props, [
     'value',
     'options',
     'multiple',
@@ -275,13 +275,6 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
 
   onCleanup(() => document.getElementById('cb-portal')?.remove());
 
-  /* ---------- UI helpers ---------- */
-  const displayText = () => {
-    const s = selectedSlugs();
-    if (!s.length) return p.placeholder || 'Type to search...';
-    return s.map((sl) => opts().find((o) => o.slug === sl)?.name ?? sl).join(', ');
-  };
-
   const isDisplay = () => p.variant === 'display';
 
   const badgeStyle = (o: Option) =>
@@ -300,13 +293,13 @@ export default function ComboBox(props: ComboBoxProps): JSX.Element {
           "opacity-50 cursor-not-allowed": p.disabled
         }}
         onClick={() => !p.disabled && inputRef?.focus()}
-        style={{ paddingRight: selectedSlugs().length > 0 && !p.disabled ? '32px' : undefined }}
+        style={{ 'padding-right': selectedSlugs().length > 0 && !p.disabled ? '32px' : undefined }}
       >
         {/* 👇 WRAPPER: Limit content width to leave space for clear button */}
         <div class="flex flex-wrap items-center gap-1 w-full" style={{ width: 'calc(100% - 32px)' }}>
           <For each={selectedSlugs()}>
             {(sl, idx) => {
-              const o = opts().find((x) => x.slug === sl) ?? { name: sl, color: '#6b7280' };
+              const o = opts().find((x) => x.slug === sl) ?? { slug: sl, name: sl, color: '#6b7280' };
               return (
                 <>
                   <Show when={isDisplay() && idx() > 0}>

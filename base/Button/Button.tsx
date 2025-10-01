@@ -155,8 +155,8 @@ const Button: Component<ButtonProps> = (props) => {
   const isIconOnly = createMemo(() => !local.children && local.icon);
 
   // Get intent and variant configurations
-  const intentConfig = createMemo(() => buttonIntentConfig[local.intent] || buttonIntentConfig.primary);
-  const variantConfig = createMemo(() => buttonVariantConfig[local.variant] || buttonVariantConfig.clip1);
+  const intentConfig = createMemo(() => buttonIntentConfig[local.intent as ButtonIntent] || buttonIntentConfig.primary);
+  const variantConfig = createMemo(() => buttonVariantConfig[local.variant as ButtonVariant] || buttonVariantConfig.clip1);
 
   // Determine if ripple should be enabled
   const hasRipple = createMemo(() => {

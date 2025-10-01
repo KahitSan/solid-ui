@@ -14,10 +14,10 @@ interface DataTableRow {
 }
 
 // Refined column definition with generic type
-interface DataTableColumn<T extends DataTableRow> {
+export interface DataTableColumn<T extends DataTableRow> {
   data: keyof T & string | null;
   title?: string;
-  render?: (data: T[keyof T], type: 'display', row: T, meta: { row: number; col: number }) => JSX.Element | string;
+  render?: (data: T[keyof T] | null, type: 'display', row: T, meta: { row: number; col: number }) => JSX.Element | string;
   orderable?: boolean;
   className?: string;
 }
@@ -25,7 +25,7 @@ interface DataTableColumn<T extends DataTableRow> {
 // Refined column definition for overrides
 interface DataTableColumnDef<T extends DataTableRow> {
   targets: number | number[] | '_all';
-  render?: (data: T[keyof T], type: 'display', row: T, meta: { row: number; col: number }) => JSX.Element | string;
+  render?: (data: T[keyof T] | null, type: 'display', row: T, meta: { row: number; col: number }) => JSX.Element | string;
   orderable?: boolean;
   className?: string;
   visible?: boolean;
@@ -266,19 +266,22 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
 
   // Separate effect for tracking user interactions and triggering debounced requests
   let debounceTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  
+
   createEffect(() => {
+    // Establish reactive tracking
+    void searchTerm();
+    void currentPage();
+    void itemsPerPage();
+    void sortConfig();
+
     if (!serverSide() || !ajax() || !hasUserInteracted()) return;
 
-    // Clear any existing timeout
     if (debounceTimeoutId !== null) {
       clearTimeout(debounceTimeoutId);
     }
 
-    // Show debouncing state
     setIsDebouncing(true);
 
-    // Set a new timeout
     debounceTimeoutId = setTimeout(() => {
       setDrawCounter(prev => prev + 1);
       makeRequest();
@@ -357,18 +360,18 @@ export default function DataTable<T extends DataTableRow>(props: DataTableProps<
     setCurrentPage(newPage);
     // The debounced effect will handle the request for server-side
   };
-  
+
   const handlePageSizeChange = (newSize: number) => {
     setHasUserInteracted(true);
     setItemsPerPage(newSize);
     setCurrentPage(1);
     // The debounced effect will handle the request for server-side
   };
-  
+
   const handleSearchChange = (value: string) => {
     setHasUserInteracted(true);
     setSearchTerm(value);
-    
+
     if (serverSide()) {
       setCurrentPage(1);
       // The debounced effect will handle the request
