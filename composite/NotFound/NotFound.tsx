@@ -1,7 +1,6 @@
 import type { Component, JSX } from 'solid-js';
 import { splitProps } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import Button from '../../base/Button/Button';
 
 export interface NotFoundProps extends JSX.HTMLAttributes<HTMLDivElement> {
   /** Custom title (default: "404") */
@@ -85,13 +84,12 @@ const NotFound: Component<NotFoundProps> = (props) => {
 
         {/* Navigation Button */}
         {!local.hideButton && (
-          <Button
-            intent="primary"
-            size="lg"
+          <button
+            class="px-6 py-3 bg-amber-600/20 border border-amber-600/60 text-amber-400 rounded font-medium hover:bg-amber-600/30 hover:border-amber-500 transition-all duration-200"
             onClick={handleButtonClick}
           >
             {local.buttonText || 'Go Back Home'}
-          </Button>
+          </button>
         )}
 
       </div>
