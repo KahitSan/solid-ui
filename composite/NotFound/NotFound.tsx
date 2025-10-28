@@ -19,11 +19,8 @@ export interface NotFoundProps extends JSX.HTMLAttributes<HTMLDivElement> {
   /** Custom navigation path (default: "/") */
   navigateTo?: string;
 
-  /** Custom logo or icon component */
-  logo?: Component;
-
-  /** Custom logo props (width, height, etc.) */
-  logoProps?: any;
+  /** Custom logo or icon JSX element */
+  logo?: JSX.Element;
 
   /** Hide the button (default: false) */
   hideButton?: boolean;
@@ -40,7 +37,6 @@ const NotFound: Component<NotFoundProps> = (props) => {
     'buttonText',
     'navigateTo',
     'logo',
-    'logoProps',
     'hideButton',
     'onButtonClick',
     'class'
@@ -66,7 +62,7 @@ const NotFound: Component<NotFoundProps> = (props) => {
         {/* Logo */}
         {local.logo && (
           <div class="flex items-center justify-center mx-auto mb-6">
-            {local.logo(local.logoProps || {})}
+            {local.logo}
           </div>
         )}
 
