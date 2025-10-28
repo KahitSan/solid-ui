@@ -104,22 +104,14 @@ const Dropdown: Component<DropdownProps> = (props) => {
                   option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
               >
-                {/* Status Indicator */}
-                {option.status && (
-                  <div
-                    class="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ background: statusColor }}
-                  />
-                )}
-
-                {/* Icon */}
-                {option.icon && (
-                  <div class="text-lg">{option.icon}</div>
-                )}
-
                 {/* Content */}
                 <div class="flex-1 text-left">
                   <div class="font-medium text-white flex items-center gap-2">
+                    {/* Icon inside the content */}
+                    {option.icon && (
+                      <span class="text-lg">{option.icon}</span>
+                    )}
+
                     {option.label}
                     {option.status === 'closed' && (
                       <span class="px-2 py-0.5 text-xs font-medium bg-zinc-700/50 text-zinc-400 rounded">
@@ -142,6 +134,14 @@ const Dropdown: Component<DropdownProps> = (props) => {
                     <div class="text-xs text-zinc-400">{option.description}</div>
                   )}
                 </div>
+
+                {/* Status Indicator */}
+                {option.status && (
+                  <div
+                    class="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: statusColor }}
+                  />
+                )}
               </button>
             )
           })}
